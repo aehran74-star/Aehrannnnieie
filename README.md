@@ -1,43 +1,30 @@
-# AEHRAN GitHub-ready build
+# AEHRAN final GitHub package
 
-## Upload this folder structure to GitHub
-- `index.html` = customer storefront
-- `admin.html` = admin panel
-- `assets/images/` = static website images
-- `.nojekyll` = keeps GitHub Pages simple
+Upload the CONTENTS of this folder to one GitHub Pages repository.
 
-## What changed
-- Firebase Storage was removed from both HTML files.
-- Firebase Realtime Database remains connected for products, stock, CMS text/settings, orders, returns and reviews.
-- Embedded base64 images were extracted to `assets/images/`.
-- Old Firebase Storage image URLs are rejected in the UI, so static/local images are preferred.
-- Admin writes are serialized and written per database section instead of overwriting the whole root every time.
-- User storefront listens with `onValue()` on products, CMS, orders, reviews, returns and media.
-- Order placement updates only the order and affected product stock fields.
+- `index.html` = customer storefront (`https://aehran.in/`)
+- `admin.html` = admin (`https://aehran.in/admin.html`)
+- `assets/` = bundled fallback/seed images
+- `.nojekyll` = keeps GitHub Pages static
 
-## Changing images later
-This build intentionally does NOT upload images from the admin to Firebase.
+## Image workflow
+The client can upload product, gallery, banner and logo images directly from `admin.html`. Images are compressed in the browser and stored under the separate Firebase Realtime Database branch `aehran_image_store_v1`. The normal store data remains under `aehran_store_v3`, so regular product/order/CMS listeners do not download the full image library on every update. The catalog stores short references such as `dbimg:img_...`.
 
-1. Upload the new image file into `assets/images/` in the same GitHub repository.
-2. In Admin, use the image URL/path field and enter:
-   `assets/images/your-image.jpg`
-3. Save the product/banner. Firebase stores only that small text path.
-4. The user website loads the actual image directly from GitHub Pages.
+This build does **not** use Firebase Storage, so the previous Firebase Storage CORS error is avoided.
 
-The Admin's file-upload buttons now show a static-image-mode message instead of creating base64 images.
+## Realtime sync
+The queued/section-level admin sync fix remains in place. Admin changes write to `aehran_store_v3`; the storefront listens in real time. Admin user accounts remain under `aehran_admin_accounts` with password hashes (no Firebase Authentication).
 
-## URLs
-If the repository is published at a project path, relative `assets/images/...` paths continue to work automatically.
+## Restored storefront behavior
+- Original homepage ordering: hero slider -> category circles -> added New Arrivals/Bestsellers sections.
+- Original checkout layout/behavior; the extra mobile checkout overlay is disabled.
+- Thank-you confirmation remains visible after order placement instead of being closed by a Firebase listener rerender.
+- Father & Son Matching is available in Admin Collections, Category Control and Navigation.
 
 
-## Admin URLs and cloud staff logins
-
-Use the same repository for both pages:
-
-- Customer storefront: `https://aehran.in/`
-- Admin panel: `https://aehran.in/admin.html`
-- GitHub Pages admin fallback: `https://aehran74-star.github.io/aehrannewsdkweb/admin.html`
-
-Admin/Manager/Employee accounts created in **Users & Roles** are synced to Firebase Realtime Database at `/aehran_admin_accounts`. Passwords are stored as salted one-way hashes; plaintext passwords are not stored. Firebase Authentication is not used.
-
-Important: if your Realtime Database rules are still public (`.read: true`, `.write: true`), this custom client-side login is not secure for production because anyone can modify the database directly. Lock down the database before handing the system to a real client.
+## Clean Admin rebuild
+- Admin layout restored from the stable build (no split/mixed script block).
+- Admin/Manager/Employee cloud login remains enabled.
+- Realtime product/order/CMS update queue remains enabled.
+- Images can be uploaded directly from Admin; they are compressed and stored under `aehran_image_store_v1` separately from `aehran_store_v3`.
+- Father & Son Matching is available in Navigation, Collections and Category Control.
