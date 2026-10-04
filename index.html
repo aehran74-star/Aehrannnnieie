@@ -1490,43 +1490,5 @@ hydrate(document);
 })();
 </script>
 
-\n<script id="aehran-father-son-final-fix">
-(function(){
-  const AEHRAN_FATHER_SON_FINAL=[{"id":"kids-crimson-red-gold","name":"Boys Crimson Red & Gold Brocade Kurta Set","cat":"kids","audience":"kids","productType":"nehru-jacket-set","price":2990,"old":3690,"color":"Crimson Red","tag":"Festive Edit","stock":18,"img":"assets/images/kids-crimson-red-gold-01.png","imgs":["assets/images/kids-crimson-red-gold-01.png","assets/images/kids-crimson-red-gold-02.png","assets/images/kids-crimson-red-gold-03.png","assets/images/kids-crimson-red-gold-04.png"],"rating":4.9,"reviews":0,"desc":"A coordinated crimson red kurta set with a gold floral brocade jacket, styled for weddings, festive celebrations and family portraits.","collections":["kids","kids-jacket","jacket","new","ready","wedding","festive","father-son","matching"],"tags":["Kids","Brocade","Nehru Jacket","Wedding","Father & Son","Matching"],"galleryType":"multi-angle","variantGroup":"kids-crimson-red-gold","published":true,"status":"published"},{"id":"kids-emerald-green-gold","name":"Boys Emerald Green & Gold Brocade Kurta Set","cat":"kids","audience":"kids","productType":"nehru-jacket-set","price":3290,"old":3990,"color":"Emerald Green","tag":"Wedding Edit","stock":18,"img":"assets/images/kids-emerald-green-gold-01.png","imgs":["assets/images/kids-emerald-green-gold-01.png","assets/images/kids-emerald-green-gold-02.png","assets/images/kids-emerald-green-gold-03.png","assets/images/kids-emerald-green-gold-04.png"],"rating":4.9,"reviews":0,"desc":"A rich emerald green kurta set with an ornate gold brocade jacket, designed for wedding ceremonies, receptions and festive occasions.","collections":["kids","kids-jacket","jacket","new","ready","wedding","festive","reception","father-son","matching"],"tags":["Kids","Brocade","Nehru Jacket","Wedding","Father & Son","Matching"],"galleryType":"multi-angle","variantGroup":"kids-emerald-green-gold","published":true,"status":"published"},{"id":"kids-midnight-black-gold","name":"Boys Midnight Black & Gold Brocade Kurta Set","cat":"kids","audience":"kids","productType":"nehru-jacket-set","price":3190,"old":3890,"color":"Midnight Black","tag":"Festive Bestseller","stock":18,"img":"assets/images/kids-midnight-black-gold-01.png","imgs":["assets/images/kids-midnight-black-gold-01.png","assets/images/kids-midnight-black-gold-02.png","assets/images/kids-midnight-black-gold-03.png","assets/images/kids-midnight-black-gold-04.png"],"rating":4.9,"reviews":0,"desc":"A midnight black kurta set finished with a gold brocade jacket for polished sangeet, wedding and evening dressing.","collections":["kids","kids-jacket","jacket","new","ready","wedding","festive","sangeet","father-son","matching"],"tags":["Kids","Brocade","Nehru Jacket","Wedding","Father & Son","Matching"],"galleryType":"multi-angle","variantGroup":"kids-midnight-black-gold","published":true,"status":"published"},{"id":"kids-ivory-black-gold-floral","name":"Boys Ivory Kurta with Black & Antique Gold Floral Brocade Jacket","cat":"kids","audience":"kids","productType":"nehru-jacket-set","price":3390,"old":4090,"color":"Ivory Black Gold","tag":"Wedding Favourite","stock":18,"img":"assets/images/kids-ivory-black-gold-floral-01.png","imgs":["assets/images/kids-ivory-black-gold-floral-01.png","assets/images/kids-ivory-black-gold-floral-02.png","assets/images/kids-ivory-black-gold-floral-03.png","assets/images/kids-ivory-black-gold-floral-04.png"],"rating":4.9,"reviews":0,"desc":"An ivory kurta set paired with a black and antique-gold floral brocade jacket for timeless wedding and ceremonial styling.","collections":["kids","kids-jacket","jacket","new","ready","wedding","festive","father-son","matching"],"tags":["Kids","Brocade","Nehru Jacket","Wedding","Father & Son","Matching"],"galleryType":"multi-angle","variantGroup":"kids-ivory-black-gold-floral","published":true,"status":"published"}];
-  function mergeFatherSonProducts(){
-    try{
-      if(!Array.isArray(window.products)) window.products=[];
-      AEHRAN_FATHER_SON_FINAL.forEach(np=>{
-        const i=window.products.findIndex(p=>p&&p.id===np.id);
-        if(i>=0) window.products[i]=Object.assign({},window.products[i],np);
-        else window.products.push(Object.assign({},np));
-      });
-      try{localStorage.setItem('aehran_products',JSON.stringify(window.products));}catch(e){}
-    }catch(e){}
-  }
-  const originalCollection=window.collection;
-  function renderFatherSonDirect(){
-    try{
-      if(!location.hash.startsWith('#collection/father-son')) return;
-      mergeFatherSonProducts();
-      if(typeof originalCollection==='function') window.collection=function(type){
-        if(type!=='father-son') return originalCollection(type);
-        const list=AEHRAN_FATHER_SON_FINAL.slice();
-        const title='Father & Son Matching';
-        const cards=list.map(p=>typeof window.pc==='function'?window.pc(p):'').join('');
-        const empty='<div class="ae-empty-state"><h3>No published styles in this collection yet.</h3></div>';
-        return '<section class="page"><div class="wrap"><div class="breadcrumbs"><a href="#home">Home</a> / Father & Son Matching</div><div class="section-head"><div><div class="eyebrow">AEHRAN collection</div><h2>'+title+'</h2></div><p>'+list.length+' styles · Refined Indian occasionwear in modern silhouettes.</p></div><div class="collection-tools"><div class="filter-chips"><button class="filter-chip active">All</button><button class="filter-chip">Under ₹5,000</button><button class="filter-chip">₹5,000–₹10,000</button></div><select onchange="sortCollection(\'father-son\',this.value)"><option value="featured">Sort: Featured</option><option value="low">Price: Low to High</option><option value="high">Price: High to Low</option><option value="rating">Top Rated</option></select></div><div id="collectionGrid" class="products">'+(cards||empty)+'</div></div></section>'+(typeof window.footer==='function'?window.footer():'');
-      };
-      if(typeof window.route==='function') window.route();
-    }catch(e){}
-  }
-  mergeFatherSonProducts();
-  setTimeout(mergeFatherSonProducts,100);
-  setTimeout(mergeFatherSonProducts,500);
-  setTimeout(mergeFatherSonProducts,1500);
-  window.addEventListener('storage',function(e){if(e.key==='aehran_products'){mergeFatherSonProducts();renderFatherSonDirect();}});
-  window.addEventListener('hashchange',function(){setTimeout(renderFatherSonDirect,0);});
-  renderFatherSonDirect();
-})();
-</script>\n</body></html>
+</body></html>
 <style>#clientHeroSlider{aspect-ratio:auto!important;min-height:0!important;height:auto!important;background:#ead8c6!important}#clientHeroSlider>img{width:100%;height:auto;display:block;object-fit:contain}</style>
