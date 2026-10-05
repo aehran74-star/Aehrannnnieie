@@ -500,6 +500,54 @@ body{background:#fbfaf7}
 <style id="aehran-admin-cms-controls">
 .admin-nav-row input{min-width:0}.admin-nav-row label{display:flex;align-items:center;gap:3px;white-space:nowrap}.admin-nav-row button{border:1px solid var(--line);background:#fff;min-height:30px}.admin-form .btn{margin-top:4px}.admin-form textarea{resize:vertical}@media(max-width:600px){.admin-nav-row{grid-template-columns:1fr!important}.admin-nav-row label{min-height:30px}.admin-nav-row button{width:44px}.admin-form{padding:12px}}
 </style>
+
+<style id="aehran-reference-header-20261005">
+/* Reference-match header refresh: scale the existing logo/wordmark and add breathing room without removing any controls. */
+.announce{display:flex!important;height:38px!important;background:#0c1825!important;color:#f2eee4!important;border-bottom:1px solid rgba(195,165,106,.28)!important;letter-spacing:.16em!important;font-size:10px!important}
+.announce:before,.announce:after{content:"◆";color:#c3a56a;font-size:7px;opacity:.95}
+.announce span{display:none!important}
+.header{background:#0c1825!important;color:#f2eee4!important;border-bottom:1px solid rgba(255,255,255,.12)!important}
+.aehran-head{height:126px!important;grid-template-columns:minmax(130px,1fr) minmax(300px,420px) minmax(300px,1fr)!important;column-gap:34px!important;padding:0 22px!important}
+.aehran-head .h-left{justify-content:flex-start!important}
+.aehran-head .header-round-logo{width:82px!important;height:82px!important;flex:0 0 82px!important;border:1px solid rgba(195,165,106,.8)!important;background:#efe8d9!important;box-shadow:0 5px 20px rgba(0,0,0,.24)!important}
+.aehran-head .header-name-logo.ae-centered-wordmark{width:min(390px,100%)!important;height:92px!important;flex:none!important;justify-self:center!important;overflow:visible!important}
+.aehran-head .header-name-logo.ae-centered-wordmark img{width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important;transform:scale(1.08)!important;transform-origin:center!important}
+.aehran-head .h-right{gap:12px!important;justify-content:flex-end!important;min-width:0!important;padding-left:28px!important}
+.aehran-head .search-pill{width:42px!important;height:46px!important;padding:0!important;border:0!important;background:transparent!important;color:#f2eee4!important}
+.aehran-head .search-pill input{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important}
+.aehran-head .search-pill svg{width:23px!important;height:23px!important}
+.aehran-head .icon-btn{width:46px!important;height:46px!important;color:#f2eee4!important}
+.aehran-head .icon-btn svg{width:24px!important;height:24px!important;stroke-width:1.35!important}
+.aehran-head .badge{top:0!important;right:-1px!important;min-width:20px!important;height:20px!important;background:#c3a56a!important;color:#0c1825!important;font-size:10px!important}
+.nav{height:62px!important;background:#0c1825!important;border-top:1px solid rgba(255,255,255,.12)!important;border-bottom:1px solid rgba(255,255,255,.10)!important}
+.nav-inner{gap:clamp(32px,6vw,76px)!important;padding:0 28px!important;color:#f2eee4!important;font-size:12px!important;letter-spacing:.13em!important;overflow-x:auto!important;justify-content:flex-start!important;scrollbar-width:none!important}
+.nav-inner::-webkit-scrollbar{display:none}
+.nav-item>a{color:#f2eee4!important}
+.nav-item>a:after{background:#c3a56a!important;bottom:8px!important}
+@media(max-width:767px){
+  .announce{height:34px!important;font-size:8px!important;letter-spacing:.12em!important}
+  .aehran-head{height:92px!important;grid-template-columns:58px minmax(0,1fr) minmax(150px,44%)!important;column-gap:12px!important;padding:0 12px!important}
+  .aehran-head .header-round-logo{width:54px!important;height:54px!important;flex-basis:54px!important}
+  .aehran-head .header-name-logo.ae-centered-wordmark{position:relative!important;left:auto!important;top:auto!important;transform:none!important;width:min(235px,100%)!important;height:70px!important;justify-self:center!important}
+  .aehran-head .header-name-logo.ae-centered-wordmark img{transform:scale(1.08)!important}
+  .aehran-head .h-right{gap:4px!important;padding-left:10px!important;min-width:150px!important}
+  .aehran-head .search-pill{width:30px!important;min-width:30px!important;height:44px!important}
+  .aehran-head .icon-btn{width:34px!important;min-width:34px!important;height:44px!important}
+  .aehran-head .icon-btn svg{width:19px!important;height:19px!important}
+  .aehran-head .badge{min-width:17px!important;height:17px!important;font-size:9px!important}
+  .nav{height:54px!important}
+  .nav-inner{gap:30px!important;padding:0 18px!important;font-size:10px!important}
+}
+@media(max-width:500px){
+  .aehran-head{grid-template-columns:48px minmax(0,1fr) 142px!important;column-gap:7px!important;padding:0 8px!important}
+  .aehran-head .header-round-logo{width:44px!important;height:44px!important;flex-basis:44px!important}
+  .aehran-head .header-name-logo.ae-centered-wordmark{width:min(190px,100%)!important;height:62px!important}
+  .aehran-head .h-right{min-width:142px!important;padding-left:3px!important;gap:1px!important}
+  .aehran-head .search-pill,.aehran-head .icon-btn{width:28px!important;min-width:28px!important}
+  .aehran-head .icon-btn svg,.aehran-head .search-pill svg{width:18px!important;height:18px!important}
+  .nav-inner{gap:25px!important;font-size:9px!important;padding:0 15px!important}
+}
+</style>
 </head>
 <body>
 <header class="header">
