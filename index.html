@@ -945,7 +945,13 @@ route();
     const slides=clientHeroSlides();
     if(!slides.length)return '';
     const many=slides.length>1;
-    const slideHTML=slides.map((s,i)=>`<div class="client-hero-slide ${i===0?'active':''}" data-index="${i}"><picture><source media="(max-width: 850px)" srcset="${escapeAttr(s.mobileImage||s.image)}"><img src="${escapeAttr(s.desktopImage||s.image||s.mobileImage)}" alt="${escapeAttr(s.label)}" loading="${i===0?'eager':'lazy'}" decoding="async" fetchpriority="${i===0?'high':'auto'}" data-dbimg="${String(s.desktopImage||s.image||'').startsWith('dbimg:')?escapeAttr(s.desktopImage||s.image):''}"></picture></div>`).join('');
+    const slideHTML=slides.map((s,i)=>{
+      const desktop=s.desktopImage||s.image||s.mobileImage||'';
+      const mobile=s.mobileImage||s.image||s.desktopImage||'';
+      const initial=i===0?(window.matchMedia&&window.matchMedia('(max-width: 850px)').matches?mobile:desktop):desktop;
+      const db=String(initial).startsWith('dbimg:')?escapeAttr(initial):'';
+      return `<div class="client-hero-slide ${i===0?'active':''}" data-index="${i}" data-desktop-image="${escapeAttr(desktop)}" data-mobile-image="${escapeAttr(mobile)}"><img src="${escapeAttr(initial)}" alt="${escapeAttr(s.label)}" loading="${i===0?'eager':'lazy'}" decoding="async" fetchpriority="${i===0?'high':'auto'}" data-dbimg="${db}"></div>`;
+    }).join('');
     const controls=many?`<button type="button" class="client-hero-arrow client-hero-prev" onclick="event.stopPropagation();clientHeroMove(-1)" aria-label="Previous banner">‹</button><button type="button" class="client-hero-arrow client-hero-next" onclick="event.stopPropagation();clientHeroMove(1)" aria-label="Next banner">›</button><div class="client-hero-nav">${slides.map((_,i)=>`<button type="button" class="client-hero-dot ${i===0?'active':''}" onclick="event.stopPropagation();clientHeroGo(${i})" aria-label="Banner ${i+1}"></button>`).join('')}</div>`:'';
     const firstLink=slides[0].link||'new';
     return `<section class="hero-user client-hero-slider" id="clientHeroSlider" aria-label="AEHRAN banner slider" data-count="${slides.length}" style="width:100%;aspect-ratio:2/3;min-height:0;background:#ead8c6;overflow:hidden">${slideHTML}${controls}<a class="client-hero-click" href="#collection/${escapeAttr(firstLink)}" aria-label="Shop AEHRAN collection"></a></section>`;
@@ -955,6 +961,34 @@ route();
     let html=originalHome();
     return html.replace(/<section class="hero-user"[^>]*>[\s\S]*?<\/section>/,clientHeroHTML());
   };
+
+  async function applyClientHeroArtDirection(){
+    const root=document.getElementById('clientHeroSlider');if(!root)return;
+    const mobile=window.matchMedia&&window.matchMedia('(max-width: 850px)').matches;
+    const imgs=[...root.querySelectorAll('.client-hero-slide')];
+    for(const slide of imgs){
+      const im=slide.querySelector('img');if(!im)continue;
+      const raw=mobile?(slide.dataset.mobileImage||slide.dataset.desktopImage||''):(slide.dataset.desktopImage||slide.dataset.mobileImage||'');
+      if(!raw)continue;
+      im.setAttribute('data-dbimg',String(raw).startsWith('dbimg:')?raw:'');
+      if(String(raw).startsWith('dbimg:')){
+        im.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+        const resolved=await window.__aehranResolveDbImage?.(raw);
+        if(resolved)im.src=resolved;
+      }else if(im.getAttribute('src')!==raw){im.src=raw}
+    }
+  }
+  window.__aehranApplyHeroArtDirection=applyClientHeroArtDirection;
+  let __aehranHeroMedia;
+  function watchClientHeroArtDirection(){
+    const mq=window.matchMedia?window.matchMedia('(max-width: 850px)'):null;
+    const run=()=>applyClientHeroArtDirection();
+    if(mq){if(mq.addEventListener)mq.addEventListener('change',run);else if(mq.addListener)mq.addListener(run);}
+    if(__aehranHeroMedia&&__aehranHeroMedia.disconnect)__aehranHeroMedia.disconnect();
+    __aehranHeroMedia=new MutationObserver(()=>run());
+    const root=document.getElementById('clientHeroSlider');if(root)__aehranHeroMedia.observe(root,{childList:true,subtree:true});
+    run();
+  }
 
   window.clientHeroGo=function(index){
     const root=document.getElementById('clientHeroSlider');if(!root)return;
@@ -978,6 +1012,8 @@ route();
 
   /* Re-render now so the current page immediately receives the client changes. */
   route();
+  setTimeout(watchClientHeroArtDirection,0);
+  window.addEventListener('resize',()=>setTimeout(applyClientHeroArtDirection,50),{passive:true});
 })();
 </script>
 
@@ -1289,7 +1325,7 @@ try{
   };
   const aeGoodImage=v=>{
     const s=aeImageValue(v);
-    return !!s&&(s.startsWith('data:image/')||s.startsWith('http://')||s.startsWith('https://')||s.startsWith('blob:')||s.startsWith('/')||s.startsWith('./')||s.startsWith('../'));
+    return !!s&&(s.startsWith('data:image/')||s.startsWith('http://')||s.startsWith('https://')||s.startsWith('blob:')||s.startsWith('/')||s.startsWith('./')||s.startsWith('../')||s.startsWith('dbimg:'));
   };
   const aeFallbackImage=()=>typeof FALLBACK!=='undefined'?FALLBACK:'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000"><rect width="100%" height="100%" fill="#f1ece5"/><text x="50%" y="50%" text-anchor="middle" fill="#766e66" font-family="Arial" font-size="26">AEHRAN</text></svg>');
 
