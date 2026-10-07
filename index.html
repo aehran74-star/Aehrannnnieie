@@ -690,6 +690,11 @@ const DEFAULT_CMS_STOREFRONT={
  seo:{title:'AEHRAN — The Royal of Ethnic',description:'AEHRAN premium Indian ethnic wear — kurta sets, jackets, sherwanis, wedding wear and kids occasionwear.'}
 };
 let cms=(()=>{try{return JSON.parse(localStorage.getItem('aehran_cms'))||JSON.parse(JSON.stringify(DEFAULT_CMS_STOREFRONT))}catch(e){return JSON.parse(JSON.stringify(DEFAULT_CMS_STOREFRONT))}})();
+/* AEHRAN Banner Manager state bridge — restored safely. */
+const AEHRAN_BANNER_FALLBACKS=['assets/images/aehran-kids-banner.png','assets/images/aehran-white-banner.jpg','assets/images/banner-fallback-desktop-3.jpg','assets/images/banner-fallback-desktop-4.jpg'];
+let aehranBannerManager=(()=>{try{const v=JSON.parse(localStorage.getItem('aehran_banner_manager_v2')||'null');if(Array.isArray(v)&&v.length)return v.filter(b=>b&&['desktop','mobile'].includes(b.deviceTarget)&&String(b.image||'').trim())}catch(e){}return AEHRAN_BANNER_FALLBACKS.map((image,i)=>({id:'bnr-fallback-'+i,deviceTarget:'desktop',image,label:'AEHRAN Collection Banner '+(i+1),link:'new',active:true,order:i,createdAt:'fallback'})).concat(AEHRAN_BANNER_FALLBACKS.slice(0,2).map((image,i)=>({id:'bnr-fallback-mobile-'+i,deviceTarget:'mobile',image,label:'AEHRAN Mobile Banner '+(i+1),link:'new',active:true,order:i,createdAt:'fallback'})))} )();
+const saveBannerManagerLocal=()=>{try{localStorage.setItem('aehran_banner_manager_v2',JSON.stringify(aehranBannerManager))}catch(e){}};
+saveBannerManagerLocal();
 function refreshBridge(){try{const p=JSON.parse(localStorage.getItem('aehran_products')||'null');if(Array.isArray(p)&&p.length)products=p}catch(e){}try{const c=JSON.parse(localStorage.getItem('aehran_cms')||'null');if(c)cms=c}catch(e){}try{orders=JSON.parse(localStorage.getItem('aehran_orders')||'[]')}catch(e){}try{returnRequests=JSON.parse(localStorage.getItem('aehran_returns')||'[]')}catch(e){}try{reviewsDB=JSON.parse(localStorage.getItem('aehran_reviews')||'{}')}catch(e){}}
 function cmsImg(v,fallback){return v||fallback||FALLBACK}
 function findByCollection(target,index=0){const list=products.filter(p=>categoryMatch(p,target));return list[index]||products[index%Math.max(products.length,1)]||{img:FALLBACK,id:'',name:'AEHRAN'} }
@@ -974,33 +979,20 @@ route();
   const originalApplyCMSStatic=applyCMSStatic;
   applyCMSStatic=function(){originalApplyCMSStatic();clientPatchNav()};
 
-  let aehranBannerAutoplaySeconds=Math.max(1,Math.min(20,Number(localStorage.getItem('aehran_banner_manager_v2_settings')?JSON.parse(localStorage.getItem('aehran_banner_manager_v2_settings')).autoplaySeconds:3)||3));
-  function applyBannerAutoplaySettings(cfg){
-    const n=Math.max(1,Math.min(20,Math.round(Number(cfg?.autoplaySeconds)||3)));
-    aehranBannerAutoplaySeconds=n;
-    try{localStorage.setItem('aehran_banner_manager_v2_settings',JSON.stringify({autoplaySeconds:n}))}catch(e){}
-    startClientHeroTimer();
-  }
-  function startClientHeroTimer(){
-    if(window.__aehranClientSliderTimer)clearInterval(window.__aehranClientSliderTimer);
-    const root=document.getElementById('clientHeroSlider');
-    if(root&&Number(root.dataset.count||0)>1){
-      window.__aehranClientSliderTimer=setInterval(()=>{const r=document.getElementById('clientHeroSlider');if(r&&Number(r.dataset.count||0)>1)clientHeroMove(1)},aehranBannerAutoplaySeconds*1000);
-    }else window.__aehranClientSliderTimer=null;
-  }
-
   function clientHeroSlides(){
     const mobile=!!(window.matchMedia&&window.matchMedia('(max-width: 850px)').matches);
     const target=mobile?'mobile':'desktop';
-    return (Array.isArray(aehranBannerManager)?aehranBannerManager:[]).filter(b=>b&&b.active!==false&&b.deviceTarget===target&&String(b.image||'').trim()).sort((a,b)=>Number(a.order||0)-Number(b.order||0)).map((b,i)=>({
-      id:b.id,image:b.image,deviceTarget:b.deviceTarget,link:b.link||'new',label:b.label||`Banner ${i+1}`
-    }));
+    let list=(Array.isArray(aehranBannerManager)?aehranBannerManager:[]).filter(b=>b&&b.active!==false&&b.deviceTarget===target&&String(b.image||'').trim()).sort((a,b)=>Number(a.order||0)-Number(b.order||0));
+    if(!list.length && !mobile){
+      list=AEHRAN_BANNER_FALLBACKS.map((image,i)=>({id:'safe-fallback-'+i,deviceTarget:'desktop',image,label:'AEHRAN Collection Banner '+(i+1),link:'new',active:true,order:i}));
+    }
+    return list.map((b,i)=>({id:b.id||('banner-'+i),image:String(b.image||''),deviceTarget:b.deviceTarget,link:b.link||'new',label:b.label||`Banner ${i+1}`}));
   }
   function clientHeroHTML(){
     const slides=clientHeroSlides();
     if(!slides.length)return '';
     const many=slides.length>1;
-    const slideHTML=slides.map((b,i)=>`<div class="client-hero-slide ${i===0?'active':''}" data-index="${i}" data-link="${escapeAttr(b.link)}"><div class="client-hero-skeleton" aria-hidden="true"></div><a href="#collection/${escapeAttr(b.link)}" aria-label="${escapeAttr(b.label)}"><img src="${escapeAttr(b.image)}" alt="${escapeAttr(b.label)}" width="1920" height="853" loading="${i===0?'eager':'lazy'}" decoding="async" fetchpriority="${i===0?'high':'auto'}" onerror="this.onerror=null;this.closest('.client-hero-slide')?.classList.add('banner-image-failed');this.style.display='none'" onload="this.closest('.client-hero-slide')?.classList.add('loaded')"></a></div>`).join('');
+    const slideHTML=slides.map((b,i)=>`<div class="client-hero-slide ${i===0?'active':''}" data-index="${i}" data-link="${escapeAttr(b.link)}"><div class="client-hero-skeleton" aria-hidden="true"></div><a href="#collection/${escapeAttr(b.link)}" aria-label="${escapeAttr(b.label)}"><img src="${String(b.image).startsWith('dbimg:')?'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==':escapeAttr(b.image)}" data-dbimg="${String(b.image).startsWith('dbimg:')?escapeAttr(b.image):''}" alt="${escapeAttr(b.label)}" width="1920" height="853" loading="${i===0?'eager':'lazy'}" decoding="async" fetchpriority="${i===0?'high':'auto'}" onerror="this.onerror=null;this.closest('.client-hero-slide')?.classList.add('banner-image-failed');this.style.display='none'" onload="this.closest('.client-hero-slide')?.classList.add('loaded')"></a></div>`).join('');
     const controls=many?`<button type="button" class="client-hero-arrow client-hero-prev" onclick="event.stopPropagation();clientHeroMove(-1)" aria-label="Previous banner">‹</button><button type="button" class="client-hero-arrow client-hero-next" onclick="event.stopPropagation();clientHeroMove(1)" aria-label="Next banner">›</button><div class="client-hero-nav">${slides.map((_,i)=>`<button type="button" class="client-hero-dot ${i===0?'active':''}" onclick="event.stopPropagation();clientHeroGo(${i})" aria-label="Banner ${i+1}"></button>`).join('')}</div>`:'';
     return `<section class="hero-user client-hero-slider" id="clientHeroSlider" aria-label="AEHRAN banner slider" data-count="${slides.length}" data-device="${slides[0].deviceTarget}">${slideHTML}${controls}</section>`;
   }
@@ -1013,10 +1005,37 @@ route();
   const originalHome=home;
   home=function(){
     let html=originalHome();
-    return html.replace(/<section class="hero-user"[^>]*>[\s\S]*?<\/section>/,clientHeroHTML());
+    const hero=clientHeroHTML();
+    if(!hero)return html;
+    const replaced=html.replace(/<section class="hero-user"[^>]*>[\s\S]*?<\/section>/,hero);
+    return replaced===html ? html.replace(/(<section[^>]*class="hero-user[^>]*>[\s\S]*?<\/section>)/,hero) : replaced;
   };
 
-  function applyClientHeroArtDirection(){clientHeroPreload();}
+  async function hydrateClientHeroImages(){
+    const root=document.getElementById('clientHeroSlider');
+    if(!root)return;
+    const imgs=[...root.querySelectorAll('img[data-dbimg]')];
+    if(!imgs.length){clientHeroPreload();return}
+    const fallback=AEHRAN_BANNER_FALLBACKS;
+    for(let i=0;i<imgs.length;i++){
+      const im=imgs[i],raw=im.getAttribute('data-dbimg')||'';
+      if(!raw.startsWith('dbimg:'))continue;
+      try{
+        let tries=0;
+        while(typeof window.__aehranResolveDbImage!=='function'&&tries++<60)await new Promise(r=>setTimeout(r,150));
+        const resolved=typeof window.__aehranResolveDbImage==='function'?await window.__aehranResolveDbImage(raw):'';
+        if(resolved){im.src=resolved;im.closest('.client-hero-slide')?.classList.add('loaded');continue}
+        throw new Error('dbimg unresolved');
+      }catch(e){
+        const fb=fallback[i%fallback.length];
+        if(fb)im.src=fb;
+        im.closest('.client-hero-slide')?.classList.add('loaded');
+        console.warn('AEHRAN hero image fallback used',e);
+      }
+    }
+    clientHeroPreload();
+  }
+  function applyClientHeroArtDirection(){clientHeroPreload();hydrateClientHeroImages();}
   window.clientHeroGo=function(index){
     const root=document.getElementById('clientHeroSlider');if(!root)return;
     const slides=[...root.querySelectorAll('.client-hero-slide')],dots=[...root.querySelectorAll('.client-hero-dot')];
@@ -1031,11 +1050,17 @@ route();
     const root=document.getElementById('clientHeroSlider');if(!root)return;
     const now=Number(root.dataset.current||0);clientHeroGo(now+dir);
   };
-  startClientHeroTimer();
+  if(window.__aehranClientSliderTimer)clearInterval(window.__aehranClientSliderTimer);
+  const heroRoot=document.getElementById('clientHeroSlider');
+  if(heroRoot && Number(heroRoot.dataset.count||0)>1){
+    window.__aehranClientSliderTimer=setInterval(()=>{const root=document.getElementById('clientHeroSlider');if(root&&Number(root.dataset.count||0)>1)clientHeroMove(1)},3000);
+  }else{window.__aehranClientSliderTimer=null}
 
   /* Re-render now so the current page immediately receives the client changes. */
   clientHeroPreload();
   route();
+  setTimeout(()=>{try{hydrateClientHeroImages();window.__aehranHydrateDbImages?.(document)}catch(e){}},80);
+  setTimeout(()=>{try{hydrateClientHeroImages()}catch(e){}},1200);
   setTimeout(watchClientHeroArtDirection,0);
   window.addEventListener('resize',()=>setTimeout(applyClientHeroArtDirection,50),{passive:true});
 })();
@@ -1209,7 +1234,7 @@ try{
  function mergeRemote(remote){const localById=new Map(products.map(p=>[String(p.id),p]));return (remote||[]).filter(Boolean).map(r=>{const id=String(r.id||''),l=localById.get(id)||{},f=originalProductFallbacks.get(id)||{};const img=good(r.img)?r.img:(good(l.img)?l.img:f.img);const localImgs=Array.isArray(l.imgs)&&l.imgs.length?l.imgs:(f.imgs||[]);let imgs=Array.isArray(r.imgs)&&r.imgs.length?r.imgs.slice():localImgs.slice();imgs=imgs.map((x,i)=>good(x)?x:(localImgs[i]||img)).filter(Boolean);if(!imgs.length&&img)imgs=[img];return {...l,...r,img,imgs}})}
  window.AEHRAN_STOREFRONT_BRIDGE={
   snapshot(){const safeCms={...cms};delete safeCms.hero;return {products,orders,reviews:reviewsDB,cms:safeCms,media:JSON.parse(localStorage.getItem('aehran_media')||'[]'),returns:returnRequests,bannersV2:aehranBannerManager}},
-  applyRemote(d={}){window.__aehranApplyingRemote=true;try{if(Array.isArray(d.products)&&d.products.length){products=mergeRemote(d.products);localStorage.setItem('aehran_products',JSON.stringify(products))}if(Array.isArray(d.orders)){orders=d.orders;localStorage.setItem('aehran_orders',JSON.stringify(orders))}if(d.reviews&&typeof d.reviews==='object'){reviewsDB=d.reviews;localStorage.setItem('aehran_reviews',JSON.stringify(reviewsDB))}if(d.cms&&typeof d.cms==='object'){cms=mergeSafeCMS(cms,d.cms);delete cms.hero;localStorage.setItem('aehran_cms',JSON.stringify(cms))}if(Array.isArray(d.bannersV2)){aehranBannerManager=d.bannersV2.filter(b=>b&&['desktop','mobile'].includes(b.deviceTarget));saveBannerManagerLocal()}if(d.bannersV2Settings&&typeof d.bannersV2Settings==='object')applyBannerAutoplaySettings(d.bannersV2Settings);if(Array.isArray(d.returns)){returnRequests=d.returns;localStorage.setItem('aehran_returns',JSON.stringify(returnRequests))}if(Array.isArray(d.media))localStorage.setItem('aehran_media',JSON.stringify(d.media));try{applyCMSStatic()}catch(e){}try{syncBadges()}catch(e){}const keepSuccess=!!document.querySelector('.order-success'),onCheckout=location.hash==='#checkout';if(!keepSuccess&&!onCheckout){try{route()}catch(e){}}else{try{window.__aehranHydrateDbImages?.(document)}catch(e){}}setTimeout(()=>{try{safeImg()}catch(e){};try{window.__aehranHydrateDbImages?.(document)}catch(e){}},30)}finally{window.__aehranApplyingRemote=false}}
+  applyRemote(d={}){window.__aehranApplyingRemote=true;try{if(Array.isArray(d.products)&&d.products.length){products=mergeRemote(d.products);localStorage.setItem('aehran_products',JSON.stringify(products))}if(Array.isArray(d.orders)){orders=d.orders;localStorage.setItem('aehran_orders',JSON.stringify(orders))}if(d.reviews&&typeof d.reviews==='object'){reviewsDB=d.reviews;localStorage.setItem('aehran_reviews',JSON.stringify(reviewsDB))}if(d.cms&&typeof d.cms==='object'){cms=mergeSafeCMS(cms,d.cms);delete cms.hero;localStorage.setItem('aehran_cms',JSON.stringify(cms))}if(Array.isArray(d.bannersV2)){aehranBannerManager=d.bannersV2.filter(b=>b&&['desktop','mobile'].includes(b.deviceTarget));saveBannerManagerLocal()}if(Array.isArray(d.returns)){returnRequests=d.returns;localStorage.setItem('aehran_returns',JSON.stringify(returnRequests))}if(Array.isArray(d.media))localStorage.setItem('aehran_media',JSON.stringify(d.media));try{applyCMSStatic()}catch(e){}try{syncBadges()}catch(e){}const keepSuccess=!!document.querySelector('.order-success'),onCheckout=location.hash==='#checkout';if(!keepSuccess&&!onCheckout){try{route()}catch(e){}}else{try{window.__aehranHydrateDbImages?.(document)}catch(e){}}setTimeout(()=>{try{safeImg()}catch(e){};try{window.__aehranHydrateDbImages?.(document)}catch(e){}},30)}finally{window.__aehranApplyingRemote=false}}
  };
  if(typeof placeOrder==='function'&&!placeOrder.__fbWrapped){const old=placeOrder;placeOrder=function(){const before=orders.length,r=old.apply(this,arguments);if(orders.length>before){const o=orders[orders.length-1];window.__aehranFirebasePushOrder?.(o,products)}return r};placeOrder.__fbWrapped=true}
  if(typeof submitReturnRequest==='function'&&!submitReturnRequest.__fbWrapped){const old=submitReturnRequest;submitReturnRequest=function(){const before=returnRequests.length,r=old.apply(this,arguments);if(returnRequests.length>before){const req=returnRequests[0],order=orders.find(x=>x.id===req?.orderId);window.__aehranFirebasePushReturn?.(req,order)}return r};submitReturnRequest.__fbWrapped=true}
@@ -1262,7 +1287,6 @@ function bindRealtime(){
   listen('products',v=>({products:arr(v)}));
   listen('cms',v=>({cms:v&&typeof v==='object'?v:{}}));
   listen('bannersV2',v=>({bannersV2:arr(v)}));
-  listen('bannersV2Settings',v=>({bannersV2Settings:v&&typeof v==='object'?v:{}}));
   listen('orders',v=>({orders:arr(v).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')))}));
   listen('reviews',v=>({reviews:v&&typeof v==='object'?v:{}}));
   listen('returns',v=>({returns:arr(v)}));
