@@ -692,10 +692,11 @@ const DEFAULT_CMS_STOREFRONT={
 let cms=(()=>{try{return JSON.parse(localStorage.getItem('aehran_cms'))||JSON.parse(JSON.stringify(DEFAULT_CMS_STOREFRONT))}catch(e){return JSON.parse(JSON.stringify(DEFAULT_CMS_STOREFRONT))}})();
 /* AEHRAN Banner Manager state bridge — restored safely. */
 const AEHRAN_BANNER_FALLBACKS=['assets/images/aehran-kids-banner.png','assets/images/aehran-white-banner.jpg','assets/images/banner-fallback-desktop-3.jpg','assets/images/banner-fallback-desktop-4.jpg'];
-let aehranBannerManager=(()=>{try{const v=JSON.parse(localStorage.getItem('aehran_banner_manager_v2')||'null');if(Array.isArray(v)&&v.length)return v.filter(b=>b&&['desktop','mobile'].includes(b.deviceTarget)&&String(b.image||'').trim())}catch(e){}return AEHRAN_BANNER_FALLBACKS.map((image,i)=>({id:'bnr-fallback-'+i,deviceTarget:'desktop',image,label:'AEHRAN Collection Banner '+(i+1),link:'new',active:true,order:i,createdAt:'fallback'})).concat(AEHRAN_BANNER_FALLBACKS.slice(0,2).map((image,i)=>({id:'bnr-fallback-mobile-'+i,deviceTarget:'mobile',image,label:'AEHRAN Mobile Banner '+(i+1),link:'new',active:true,order:i,createdAt:'fallback'})))} )();
+let aehranBannerManager=(()=>{try{const v=JSON.parse(localStorage.getItem('aehran_banner_manager_v2')||'null');if(Array.isArray(v)&&v.length)return v.filter(b=>b&&['desktop','mobile'].includes(b.deviceTarget)&&String(b.image||'').trim())}catch(e){}return AEHRAN_BANNER_FALLBACKS.map((image,i)=>({id:'bnr-fallback-'+i,deviceTarget:'desktop',image,label:'AEHRAN Collection Banner '+(i+1),link:'new',active:true,order:i,createdAt:'fallback'})).concat(AEHRAN_BANNER_FALLBACKS.map((image,i)=>({id:'bnr-fallback-mobile-'+i,deviceTarget:'mobile',image,label:'AEHRAN Mobile Banner '+(i+1),link:'new',active:true,order:i,createdAt:'fallback'})))} )();
+const aehranBannerSettings=(()=>{try{const v=JSON.parse(localStorage.getItem('aehran_banner_settings_v2')||'null');return {interval:Math.max(1,Math.min(30,Number(v?.interval)||3))}}catch(e){return {interval:3}}})();
 const saveBannerManagerLocal=()=>{try{localStorage.setItem('aehran_banner_manager_v2',JSON.stringify(aehranBannerManager))}catch(e){}};
 saveBannerManagerLocal();
-function refreshBridge(){try{const p=JSON.parse(localStorage.getItem('aehran_products')||'null');if(Array.isArray(p)&&p.length)products=p}catch(e){}try{const c=JSON.parse(localStorage.getItem('aehran_cms')||'null');if(c)cms=c}catch(e){}try{orders=JSON.parse(localStorage.getItem('aehran_orders')||'[]')}catch(e){}try{returnRequests=JSON.parse(localStorage.getItem('aehran_returns')||'[]')}catch(e){}try{reviewsDB=JSON.parse(localStorage.getItem('aehran_reviews')||'{}')}catch(e){}}
+function refreshBridge(){try{const p=JSON.parse(localStorage.getItem('aehran_products')||'null');if(Array.isArray(p)&&p.length)products=p}catch(e){}try{const cols=JSON.parse(localStorage.getItem('aehran_collections')||'null');if(Array.isArray(cols))aehranCollections=cols}catch(e){}try{const c=JSON.parse(localStorage.getItem('aehran_cms')||'null');if(c)cms=c}catch(e){}try{orders=JSON.parse(localStorage.getItem('aehran_orders')||'[]')}catch(e){}try{returnRequests=JSON.parse(localStorage.getItem('aehran_returns')||'[]')}catch(e){}try{reviewsDB=JSON.parse(localStorage.getItem('aehran_reviews')||'{}')}catch(e){}}
 function cmsImg(v,fallback){return v||fallback||FALLBACK}
 function findByCollection(target,index=0){const list=products.filter(p=>categoryMatch(p,target));return list[index]||products[index%Math.max(products.length,1)]||{img:FALLBACK,id:'',name:'AEHRAN'} }
 function applyCMSStatic(){const t=cms.theme||{};const root=document.documentElement;[['--navy',t.navy],['--navy-2',t.navy2],['--navy-3',t.navy3],['--cream',t.cream],['--gold',t.gold]].forEach(([k,v])=>v&&root.style.setProperty(k,v));if(t.background)document.body.style.background=t.background;const logo=document.querySelector('.header-round-logo img');if(logo&&cms.branding?.logo)logo.src=cms.branding.logo;document.title=cms.seo?.title||document.title;let md=document.querySelector('meta[name="description"]');if(md&&cms.seo?.description)md.setAttribute('content',cms.seo.description);const nav=document.querySelector('.nav-inner');if(nav&&Array.isArray(cms.nav)){if(!window.__aehranMega){window.__aehranMega={};[...nav.children].forEach(n=>{const a=n.querySelector(':scope>a');const href=a?.getAttribute('href')||'';const key=href==='#home'?'home':href.split('/').pop();const m=n.querySelector('.mega');if(m)window.__aehranMega[key]=m.outerHTML})}nav.innerHTML=cms.nav.filter(x=>x.visible!==false).map(x=>{const target=x.target||'home',href=target==='home'?'#home':'#collection/'+target,mega=window.__aehranMega[target]||'',mobileClass=x.mobileVisible===false?' mobile-nav-hidden':'';return `<div class="nav-item ${target==='sale'?'sale':''}${mobileClass}" data-nav-target="${escapeAttr(target)}"><a href="${href}">${escapeHTML(x.label||target)}</a>${mega}</div>`}).join('')}}
@@ -705,6 +706,7 @@ const AEHRAN_USER_KIDS_PRODUCTS=[{"id":"kids-ivory-silver-jacket","name":"Boys I
 {"id":"kids-midnight-black-gold","name":"Boys Midnight Black & Gold Brocade Kurta Set","cat":"kids","audience":"kids","productType":"nehru-jacket-set","price":3190,"old":3890,"color":"Midnight Black","tag":"Festive Bestseller","stock":18,"img":"assets/images/kids-midnight-black-gold-01.png","imgs":["assets/images/kids-midnight-black-gold-01.png","assets/images/kids-midnight-black-gold-02.png","assets/images/kids-midnight-black-gold-03.png","assets/images/kids-midnight-black-gold-04.png"],"rating":4.9,"reviews":0,"desc":"A midnight black kurta set finished with a gold brocade jacket for polished sangeet, wedding and evening dressing.","collections":["kids","kids-jacket","jacket","new","ready","wedding","festive","sangeet","father-son"],"tags":["Kids","Brocade","Nehru Jacket","Wedding"],"galleryType":"multi-angle","variantGroup":"kids-midnight-black-gold"},
 {"id":"kids-ivory-black-gold-floral","name":"Boys Ivory Kurta with Black & Antique Gold Floral Brocade Jacket","cat":"kids","audience":"kids","productType":"nehru-jacket-set","price":3390,"old":4090,"color":"Ivory Black Gold","tag":"Wedding Favourite","stock":18,"img":"assets/images/kids-ivory-black-gold-floral-01.png","imgs":["assets/images/kids-ivory-black-gold-floral-01.png","assets/images/kids-ivory-black-gold-floral-02.png","assets/images/kids-ivory-black-gold-floral-03.png","assets/images/kids-ivory-black-gold-floral-04.png"],"rating":4.9,"reviews":0,"desc":"An ivory kurta set paired with a black and antique-gold floral brocade jacket for timeless wedding and ceremonial styling.","collections":["kids","kids-jacket","jacket","new","ready","wedding","festive","father-son"],"tags":["Kids","Brocade","Nehru Jacket","Wedding"],"galleryType":"multi-angle","variantGroup":"kids-ivory-black-gold-floral"}];
 const AEHRAN_USER_MENS_PRODUCTS=[{"id":"ivory-pastel-geometric-jacket-set","name":"Ivory Pastel Geometric Embroidered Nehru Jacket Kurta Set","cat":"jacket","price":6490,"old":7990,"color":"Ivory Multi","tag":"New Arrival","stock":14,"img":"assets/images/asset-9abd0e55571f.jpg","imgs":["assets/images/asset-9abd0e55571f.jpg","assets/images/asset-882ac0b784d6.jpg","assets/images/asset-2bfecb08f9ac.jpg","assets/images/asset-61fd2a444ae0.jpg"],"rating":4.9,"reviews":18,"desc":"An elegant ivory kurta-pajama set layered with a pastel geometric embroidered Nehru jacket, finished with statement buttons and a clean tailored silhouette for weddings, receptions and festive occasions.","collections":["new","men","jacket","wedding","groomsman","father","brother","ready","festive"]}];
+let aehranCollections=(()=>{try{const v=JSON.parse(localStorage.getItem('aehran_collections')||'null');return Array.isArray(v)?v:[]}catch(e){return []}})();
 let products=JSON.parse(localStorage.getItem('aehran_products')||'null')||defaultProducts;
 AEHRAN_USER_MENS_PRODUCTS.slice().reverse().forEach(np=>{const i=products.findIndex(p=>p.id===np.id);if(i>=0){products[i]={...products[i],...np};if(i!==0){const [hit]=products.splice(i,1);products.unshift(hit)}}else products.unshift(np)});
 AEHRAN_USER_KIDS_PRODUCTS.forEach(np=>{const i=products.findIndex(p=>p.id===np.id);if(i>=0)products[i]={...products[i],...np};else products.push(np)});
@@ -734,9 +736,25 @@ function ico(t){const m={people:'<svg viewBox="0 0 24 24" fill="none" stroke="cu
 function footer(){const f=cms.footer||DEFAULT_CMS_STOREFRONT.footer,b=cms.branding||DEFAULT_CMS_STOREFRONT.branding,logo=b.footerLogo||b.logo||BUILTIN_FOOTER_LOGO;return `<section class="wrap"><div class="news"><div><h3>${escapeHTML(f.newsletterTitle||'Join the AEHRAN Edit')}</h3><p>${escapeHTML(f.newsletterText||'')}</p></div><form class="news-form" onsubmit="subscribe(event)"><input id="newsEmail" required type="email" placeholder="Email address"><button class="btn">Subscribe</button></form></div></section><footer class="footer"><div class="wrap"><div class="footer-grid"><div class="foot-logo"><img src="${escapeAttr(logo)}"><p>${escapeHTML(f.about||'')}</p></div><div class="foot"><h4>Shop</h4><a href="#collection/new">New Arrivals</a><a href="#collection/men">Men</a><a href="#collection/wedding">Wedding</a><a href="#collection/kids">Kids</a><a href="#collection/sale">Sale</a></div><div class="foot"><h4>Customer Care</h4><a href="javascript:void(0)" onclick="trackOrderModal()">Track Order</a><a href="javascript:void(0)" onclick="policy('Shipping & Delivery')">Shipping</a><a href="javascript:void(0)" onclick="policy('Returns & Exchanges')">Returns</a><a href="javascript:void(0)" onclick="policy('Size Guide')">Size Guide</a></div><div class="foot"><h4>About</h4><a href="javascript:void(0)" onclick="policy('Our Story')">Our Story</a><a href="javascript:void(0)" onclick="policy('Craft & Materials')">Craft & Materials</a><a href="javascript:void(0)" onclick="policy('Privacy Policy')">Privacy</a><a href="javascript:void(0)" onclick="policy('Terms & Conditions')">Terms</a></div><div class="foot"><h4>Contact</h4><a href="mailto:${escapeAttr(f.contactEmail||'care@aehran.com')}">${escapeHTML(f.contactEmail||'care@aehran.com')}</a><a href="javascript:void(0)">${escapeHTML(f.instagram||'@aehran')}</a><a href="#account">My Account</a></div></div><div class="copyright"><span>${escapeHTML(f.copyright||'© 2026 AEHRAN')}</span><span>${escapeHTML(b.tagline||'The Royal of Ethnic')}</span></div></div></footer>`}
 
 function switchHomeTab(el,type){document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));el.classList.add('active');let list=type==='all'?products:products.filter(p=>p.cat===type);document.getElementById('homeProducts').innerHTML=list.slice(0,8).map(pc).join('');safeImg()}
-function categoryMatch(p,type){if(type==='all')return true;const cols=Array.isArray(p.collections)?p.collections:[];if(cols.length)return cols.includes(type)||(type==='sale'&&p.old>p.price);if(['new','men'].includes(type))return true;if(type==='sale')return p.old>p.price;if(type==='wedding')return ['wedding','sherwani','jacket','groom-gold'].includes(p.cat)||['sherwani','jacket'].includes(p.cat);if(type==='reception')return ['sherwani','minimal','sangeet'].includes(p.cat);if(type==='groom')return ['sherwani','jacket'].includes(p.cat);if(type==='groomsman')return ['jacket','kurta','sangeet'].includes(p.cat);if(type==='father-son')return cols.includes('father-son')||cols.includes('father')||['kurta','jacket','minimal'].includes(p.cat);if(type==='father'||type==='brother')return ['kurta','jacket','minimal'].includes(p.cat);if(type==='ready')return p.stock>0;return p.cat===type}
+function categoryMatch(p,type){
+  if(type==='all')return true;
+  const cols=Array.isArray(p.collections)?p.collections:[];
+  if(cols.includes(type))return true;
+  if(type==='sale')return p.old>p.price;
+  if(type==='ready')return p.stock>0;
+  if(cols.length)return false;
+  if(['new','men'].includes(type))return true;
+  if(type==='wedding')return ['wedding','sherwani','jacket','groom-gold'].includes(p.cat)||['sherwani','jacket'].includes(p.cat);
+  if(type==='reception')return ['sherwani','minimal','sangeet'].includes(p.cat);
+  if(type==='groom')return ['sherwani','jacket'].includes(p.cat);
+  if(type==='groomsman')return ['jacket','kurta','sangeet'].includes(p.cat);
+  if(type==='father-son')return cols.includes('father-son')||cols.includes('father')||['kurta','jacket','minimal'].includes(p.cat);
+  if(type==='father'||type==='brother')return ['kurta','jacket','minimal'].includes(p.cat);
+  return p.cat===type;
+}
 
-function collection(type){let list=products.filter(p=>categoryMatch(p,type));if(!list.length)list=products;const title={all:'All Occasionwear',new:'New Arrivals',men:'Men’s Occasionwear',kurta:'Kurta Sets',jacket:'Kurta Jacket Sets',sherwani:'Sherwanis',kids:'Kids Occasionwear',wedding:'Wedding Edit',minimal:'Minimal Edit',sale:'Sale Edit', 'kids-kurta':'Kids Kurta Pajama','waistcoat-sets':'Men · Waistcoat Sets',haldi:'Haldi Edit',sangeet:'Sangeet Edit',reception:'Reception Edit',festive:'Festive Edit',indowestern:'Indo-Western',groom:'Groom Edit',groomsman:'Groomsman Edit',father:'Father of the Bride / Groom',brother:'Brother Edit',ready:'Ready to Ship'}[type]||'Collection';return `<section class="page"><div class="wrap"><div class="breadcrumbs"><a href="#home">Home</a> / ${title}</div><div class="section-head"><div><div class="eyebrow">AEHRAN collection</div><h2>${title}</h2></div><p>${list.length} styles · Refined Indian occasionwear in modern silhouettes.</p></div><div class="collection-tools"><div class="filter-chips"><button class="filter-chip active" onclick="filterPrice(this,'${type}','all')">All</button><button class="filter-chip" onclick="filterPrice(this,'${type}','under5')">Under ₹5,000</button><button class="filter-chip" onclick="filterPrice(this,'${type}','5to10')">₹5,000–₹10,000</button><button class="filter-chip" onclick="filterPrice(this,'${type}','10plus')">₹10,000+</button></div><select onchange="sortCollection('${type}',this.value)"><option value="featured">Sort: Featured</option><option value="low">Price: Low to High</option><option value="high">Price: High to Low</option><option value="rating">Top Rated</option></select></div><div id="collectionGrid" class="products">${list.map(pc).join('')}</div></div></section>${footer()}`}
+function aeCollectionTitle(type){return aehranCollections.find(x=>Array.isArray(x)&&x[0]===type)?.[1]||type;}
+function collection(type){let list=products.filter(p=>categoryMatch(p,type));if(!list.length)list=products;const title=(aehranCollections.find(x=>Array.isArray(x)&&x[0]===type)?.[1])||{all:'All Occasionwear',new:'New Arrivals',men:'Men’s Occasionwear',kurta:'Kurta Sets',jacket:'Kurta Jacket Sets',sherwani:'Sherwanis',kids:'Kids Occasionwear',wedding:'Wedding Edit',minimal:'Minimal Edit',sale:'Sale Edit','kids-kurta':'Kids Kurta Pajama','waistcoat-sets':'Men · Waistcoat Sets',haldi:'Haldi Edit',sangeet:'Sangeet Edit',reception:'Reception Edit',festive:'Festive Edit',indowestern:'Indo-Western',groom:'Groom Edit',groomsman:'Groomsman Edit',father:'Father of the Bride / Groom',brother:'Brother Edit',ready:'Ready to Ship'}[type]||'Collection';return `<section class="page"><div class="wrap"><div class="breadcrumbs"><a href="#home">Home</a> / ${title}</div><div class="section-head"><div><div class="eyebrow">AEHRAN collection</div><h2>${title}</h2></div><p>${list.length} styles · Refined Indian occasionwear in modern silhouettes.</p></div><div class="collection-tools"><div class="filter-chips"><button class="filter-chip active" onclick="filterPrice(this,'${type}','all')">All</button><button class="filter-chip" onclick="filterPrice(this,'${type}','under5')">Under ₹5,000</button><button class="filter-chip" onclick="filterPrice(this,'${type}','5to10')">₹5,000–₹10,000</button><button class="filter-chip" onclick="filterPrice(this,'${type}','10plus')">₹10,000+</button></div><select onchange="sortCollection('${type}',this.value)"><option value="featured">Sort: Featured</option><option value="low">Price: Low to High</option><option value="high">Price: High to Low</option><option value="rating">Top Rated</option></select></div><div id="collectionGrid" class="products">${list.map(pc).join('')}</div></div></section>${footer()}`}
 function filterPrice(el,type,range){document.querySelectorAll('.filter-chip').forEach(x=>x.classList.remove('active'));el.classList.add('active');let list=products.filter(p=>categoryMatch(p,type));if(range==='under5')list=list.filter(p=>p.price<5000);if(range==='5to10')list=list.filter(p=>p.price>=5000&&p.price<=10000);if(range==='10plus')list=list.filter(p=>p.price>10000);document.getElementById('collectionGrid').innerHTML=list.map(pc).join('');safeImg()}
 function sortCollection(type,sort){let list=products.filter(p=>categoryMatch(p,type));if(sort==='low')list.sort((a,b)=>a.price-b.price);if(sort==='high')list.sort((a,b)=>b.price-a.price);if(sort==='rating')list.sort((a,b)=>b.rating-a.rating);document.getElementById('collectionGrid').innerHTML=list.map(pc).join('');safeImg()}
 function aeGSTSettings(){return window.AEHRAN_GST?.normalize(cms.gstSettings||{})||{enabled:false,defaultRate:0,higherRate:0,threshold:1000,mode:'exclusive',businessState:''}}
@@ -885,7 +903,7 @@ function renderSearch(q){const term=q.toLowerCase().trim(),list=term?products.fi
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>t.classList.remove('show'),2200)}
 function escapeHTML(s=''){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}function escapeAttr(s=''){return escapeHTML(s)}
 try{const bridge=new BroadcastChannel('aehran-cms');bridge.onmessage=()=>{refreshBridge();if(location.hash==='#checkout')applyCMSStatic();else route()}}catch(e){}
-window.addEventListener('storage',e=>{if(['aehran_products','aehran_cms','aehran_orders','aehran_returns','aehran_reviews','aehran_last_update'].includes(e.key)){refreshBridge();if(location.hash==='#checkout')applyCMSStatic();else route()}});
+window.addEventListener('storage',e=>{if(['aehran_products','aehran_collections','aehran_cms','aehran_orders','aehran_returns','aehran_reviews','aehran_last_update','aehran_banner_manager_v2','aehran_banner_settings_v2'].includes(e.key)){if(e.key==='aehran_banner_manager_v2'){try{const v=JSON.parse(e.newValue||'[]');if(Array.isArray(v))aehranBannerManager=v}catch(_){}}if(e.key==='aehran_banner_settings_v2'){try{const v=JSON.parse(e.newValue||'{}');aehranBannerSettings.interval=Math.max(1,Math.min(30,Number(v?.interval)||3))}catch(_){}}refreshBridge();if(location.hash==='#checkout')applyCMSStatic();else {route();setTimeout(setupClientHeroTimer,60)}}});
 route();
 </script>
 
@@ -983,8 +1001,8 @@ route();
     const mobile=!!(window.matchMedia&&window.matchMedia('(max-width: 850px)').matches);
     const target=mobile?'mobile':'desktop';
     let list=(Array.isArray(aehranBannerManager)?aehranBannerManager:[]).filter(b=>b&&b.active!==false&&b.deviceTarget===target&&String(b.image||'').trim()).sort((a,b)=>Number(a.order||0)-Number(b.order||0));
-    if(!list.length && !mobile){
-      list=AEHRAN_BANNER_FALLBACKS.map((image,i)=>({id:'safe-fallback-'+i,deviceTarget:'desktop',image,label:'AEHRAN Collection Banner '+(i+1),link:'new',active:true,order:i}));
+    if(!list.length){
+      list=AEHRAN_BANNER_FALLBACKS.map((image,i)=>({id:'safe-fallback-'+target+'-'+i,deviceTarget:target,image,label:'AEHRAN '+(target==='mobile'?'Mobile ':'')+'Collection Banner '+(i+1),link:'new',active:true,order:i}));
     }
     return list.map((b,i)=>({id:b.id||('banner-'+i),image:String(b.image||''),deviceTarget:b.deviceTarget,link:b.link||'new',label:b.label||`Banner ${i+1}`}));
   }
@@ -1029,7 +1047,8 @@ route();
       }catch(e){
         const fb=fallback[i%fallback.length];
         if(fb)im.src=fb;
-        im.closest('.client-hero-slide')?.classList.add('loaded');
+        const slide=im.closest('.client-hero-slide');
+        slide?.classList.add('banner-image-failed','loaded');
         console.warn('AEHRAN hero image fallback used',e);
       }
     }
@@ -1050,19 +1069,28 @@ route();
     const root=document.getElementById('clientHeroSlider');if(!root)return;
     const now=Number(root.dataset.current||0);clientHeroGo(now+dir);
   };
-  if(window.__aehranClientSliderTimer)clearInterval(window.__aehranClientSliderTimer);
-  const heroRoot=document.getElementById('clientHeroSlider');
-  if(heroRoot && Number(heroRoot.dataset.count||0)>1){
-    window.__aehranClientSliderTimer=setInterval(()=>{const root=document.getElementById('clientHeroSlider');if(root&&Number(root.dataset.count||0)>1)clientHeroMove(1)},3000);
-  }else{window.__aehranClientSliderTimer=null}
+  function setupClientHeroTimer(){
+    if(window.__aehranClientSliderTimer)clearInterval(window.__aehranClientSliderTimer);
+    window.__aehranClientSliderTimer=null;
+    const root=document.getElementById('clientHeroSlider');
+    if(root && Number(root.dataset.count||0)>1){
+      const seconds=Math.max(1,Math.min(30,Number(aehranBannerSettings.interval)||3));
+      window.__aehranClientSliderTimer=setInterval(()=>{
+        const current=document.getElementById('clientHeroSlider');
+        if(current&&Number(current.dataset.count||0)>1)clientHeroMove(1);
+      },seconds*1000);
+    }
+  }
 
   /* Re-render now so the current page immediately receives the client changes. */
   clientHeroPreload();
   route();
+  setupClientHeroTimer();
   setTimeout(()=>{try{hydrateClientHeroImages();window.__aehranHydrateDbImages?.(document)}catch(e){}},80);
   setTimeout(()=>{try{hydrateClientHeroImages()}catch(e){}},1200);
   setTimeout(watchClientHeroArtDirection,0);
-  window.addEventListener('resize',()=>setTimeout(applyClientHeroArtDirection,50),{passive:true});
+  window.addEventListener('resize',()=>setTimeout(()=>{applyClientHeroArtDirection();setupClientHeroTimer()},50),{passive:true});
+  window.addEventListener('hashchange',()=>setTimeout(setupClientHeroTimer,60));
 })();
 </script>
 
@@ -1233,8 +1261,8 @@ try{
  }
  function mergeRemote(remote){const localById=new Map(products.map(p=>[String(p.id),p]));return (remote||[]).filter(Boolean).map(r=>{const id=String(r.id||''),l=localById.get(id)||{},f=originalProductFallbacks.get(id)||{};const img=good(r.img)?r.img:(good(l.img)?l.img:f.img);const localImgs=Array.isArray(l.imgs)&&l.imgs.length?l.imgs:(f.imgs||[]);let imgs=Array.isArray(r.imgs)&&r.imgs.length?r.imgs.slice():localImgs.slice();imgs=imgs.map((x,i)=>good(x)?x:(localImgs[i]||img)).filter(Boolean);if(!imgs.length&&img)imgs=[img];return {...l,...r,img,imgs}})}
  window.AEHRAN_STOREFRONT_BRIDGE={
-  snapshot(){const safeCms={...cms};delete safeCms.hero;return {products,orders,reviews:reviewsDB,cms:safeCms,media:JSON.parse(localStorage.getItem('aehran_media')||'[]'),returns:returnRequests,bannersV2:aehranBannerManager}},
-  applyRemote(d={}){window.__aehranApplyingRemote=true;try{if(Array.isArray(d.products)&&d.products.length){products=mergeRemote(d.products);localStorage.setItem('aehran_products',JSON.stringify(products))}if(Array.isArray(d.orders)){orders=d.orders;localStorage.setItem('aehran_orders',JSON.stringify(orders))}if(d.reviews&&typeof d.reviews==='object'){reviewsDB=d.reviews;localStorage.setItem('aehran_reviews',JSON.stringify(reviewsDB))}if(d.cms&&typeof d.cms==='object'){cms=mergeSafeCMS(cms,d.cms);delete cms.hero;localStorage.setItem('aehran_cms',JSON.stringify(cms))}if(Array.isArray(d.bannersV2)){aehranBannerManager=d.bannersV2.filter(b=>b&&['desktop','mobile'].includes(b.deviceTarget));saveBannerManagerLocal()}if(Array.isArray(d.returns)){returnRequests=d.returns;localStorage.setItem('aehran_returns',JSON.stringify(returnRequests))}if(Array.isArray(d.media))localStorage.setItem('aehran_media',JSON.stringify(d.media));try{applyCMSStatic()}catch(e){}try{syncBadges()}catch(e){}const keepSuccess=!!document.querySelector('.order-success'),onCheckout=location.hash==='#checkout';if(!keepSuccess&&!onCheckout){try{route()}catch(e){}}else{try{window.__aehranHydrateDbImages?.(document)}catch(e){}}setTimeout(()=>{try{safeImg()}catch(e){};try{window.__aehranHydrateDbImages?.(document)}catch(e){}},30)}finally{window.__aehranApplyingRemote=false}}
+  snapshot(){const safeCms={...cms};delete safeCms.hero;return {products,orders,reviews:reviewsDB,cms:safeCms,collections:aehranCollections,media:JSON.parse(localStorage.getItem('aehran_media')||'[]'),returns:returnRequests,bannersV2:aehranBannerManager}},
+  applyRemote(d={}){window.__aehranApplyingRemote=true;try{if(Array.isArray(d.products)&&d.products.length){products=mergeRemote(d.products);localStorage.setItem('aehran_products',JSON.stringify(products))}if(Array.isArray(d.orders)){orders=d.orders;localStorage.setItem('aehran_orders',JSON.stringify(orders))}if(d.reviews&&typeof d.reviews==='object'){reviewsDB=d.reviews;localStorage.setItem('aehran_reviews',JSON.stringify(reviewsDB))}if(d.cms&&typeof d.cms==='object'){cms=mergeSafeCMS(cms,d.cms);delete cms.hero;localStorage.setItem('aehran_cms',JSON.stringify(cms))}if(Array.isArray(d.collections)&&d.collections.length){aehranCollections=d.collections.map(x=>Array.isArray(x)?[String(x[0]),String(x[1]||x[0])]:x).filter(x=>Array.isArray(x)&&x[0]);try{localStorage.setItem('aehran_collections',JSON.stringify(aehranCollections))}catch(e){}}if(Array.isArray(d.bannersV2)){aehranBannerManager=d.bannersV2.filter(b=>b&&['desktop','mobile'].includes(b.deviceTarget));saveBannerManagerLocal()}if(Array.isArray(d.returns)){returnRequests=d.returns;localStorage.setItem('aehran_returns',JSON.stringify(returnRequests))}if(Array.isArray(d.media))localStorage.setItem('aehran_media',JSON.stringify(d.media));try{applyCMSStatic()}catch(e){}try{syncBadges()}catch(e){}const keepSuccess=!!document.querySelector('.order-success'),onCheckout=location.hash==='#checkout';if(!keepSuccess&&!onCheckout){try{route()}catch(e){}}else{try{window.__aehranHydrateDbImages?.(document)}catch(e){}}setTimeout(()=>{try{safeImg()}catch(e){};try{window.__aehranHydrateDbImages?.(document)}catch(e){}},30)}finally{window.__aehranApplyingRemote=false}}
  };
  if(typeof placeOrder==='function'&&!placeOrder.__fbWrapped){const old=placeOrder;placeOrder=function(){const before=orders.length,r=old.apply(this,arguments);if(orders.length>before){const o=orders[orders.length-1];window.__aehranFirebasePushOrder?.(o,products)}return r};placeOrder.__fbWrapped=true}
  if(typeof submitReturnRequest==='function'&&!submitReturnRequest.__fbWrapped){const old=submitReturnRequest;submitReturnRequest=function(){const before=returnRequests.length,r=old.apply(this,arguments);if(returnRequests.length>before){const req=returnRequests[0],order=orders.find(x=>x.id===req?.orderId);window.__aehranFirebasePushReturn?.(req,order)}return r};submitReturnRequest.__fbWrapped=true}
@@ -1286,6 +1314,7 @@ function bindRealtime(){
   });
   listen('products',v=>({products:arr(v)}));
   listen('cms',v=>({cms:v&&typeof v==='object'?v:{}}));
+  listen('collections',v=>({collections:arr(v)}));
   listen('bannersV2',v=>({bannersV2:arr(v)}));
   listen('orders',v=>({orders:arr(v).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')))}));
   listen('reviews',v=>({reviews:v&&typeof v==='object'?v:{}}));
@@ -1707,8 +1736,8 @@ if(app){try{const functions=getFunctions(app,'asia-southeast1');const createRazo
     }
   }catch(e){}
   /* Network/Firebase is optional for initial storefront rendering. */
-  setTimeout(dismissBoot,300);
-  setTimeout(dismissBoot,1200);
+  setTimeout(dismissBoot,150);
+  setTimeout(dismissBoot,700);
 })();
 
 </script>
@@ -1718,7 +1747,7 @@ import {initializeApp,getApps,getApp} from "https://www.gstatic.com/firebasejs/1
 import {getDatabase,ref,get} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
 const config={apiKey:"AIzaSyBmdVZbj1L6hF7mfsxI0XD3KoI3NrSuNjg",authDomain:"aehran123.firebaseapp.com",databaseURL:"https://aehran123-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"aehran123",storageBucket:"aehran123.firebasestorage.app",messagingSenderId:"1052165867764",appId:"1:1052165867764:web:638b4b01424ec6a4ee76a1",measurementId:"G-965R6T00TK"};
 const app=getApps().length?getApp():initializeApp(config),db=getDatabase(app),IMAGE_ROOT='aehran_image_store_v1',cache=new Map(),pending=new Map();
-async function resolveDbImage(value){if(typeof value!=='string'||!value.startsWith('dbimg:'))return value;const key=value.slice(6);if(cache.has(key))return cache.get(key);if(pending.has(key))return pending.get(key);const p=get(ref(db,`${IMAGE_ROOT}/${key}`)).then(s=>{const v=s.exists()?s.val():null,d=typeof v==='string'?v:v?.data||'';if(d)cache.set(key,d);pending.delete(key);return d}).catch(e=>{pending.delete(key);console.warn('AEHRAN image load failed',key,e);return ''});pending.set(key,p);return p}
+async function resolveDbImage(value){if(typeof value!=='string'||!value.startsWith('dbimg:'))return value;const key=value.slice(6);if(cache.has(key))return cache.get(key);if(pending.has(key))return pending.get(key);const p=Promise.race([get(ref(db,`${IMAGE_ROOT}/${key}`)),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Image lookup timeout')),7000))]).then(s=>{const v=s.exists()?s.val():null,d=typeof v==='string'?v:v?.data||'';if(d)cache.set(key,d);pending.delete(key);return d}).catch(e=>{pending.delete(key);console.warn('AEHRAN image load failed',key,e);return ''});pending.set(key,p);return p}
 window.__aehranResolveDbImage=resolveDbImage;
 async function hydrate(root=document){
   const list=[];if(root?.matches?.('img'))list.push(root);if(root?.querySelectorAll)list.push(...root.querySelectorAll('img'));
