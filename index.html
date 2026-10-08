@@ -2369,7 +2369,35 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMobileMenu()});
     }finally{clearTimeout(timer)}
   }
 
-  async function finalPlaceOrder(){
+  function aeFinalizeLegacyRazorpayOrder(paymentId=''){
+    const t=totals();
+    const order={
+      id:'AHR'+Math.floor(100000+Math.random()*900000),
+      date:new Date().toISOString(),
+      name:document.getElementById('name').value,
+      email:document.getElementById('email').value,
+      phone:document.getElementById('phone').value.replace(/\D/g,''),
+      address:[
+        document.getElementById('address').value,
+        document.getElementById('city').value,
+        document.getElementById('state').value,
+        document.getElementById('pincode').value
+      ].join(', '),
+      payment:'Razorpay',
+      status:'Placed',
+      items:cart.map(x=>({
+        id:x.id,name:x.name,qty:x.qty,size:x.size,color:x.color,
+        fatherSize:x.fatherSize,sonSize:x.sonSize,price:x.price
+      })),
+      total:t.total,
+      coupon:coupon?.code||null,
+      razorpayPaymentId:paymentId||'',
+      paymentStatus:'Captured'
+    };
+    return aeHandleSecureOrderResult({order});
+  }
+
+async function finalPlaceOrder(){
     if(window.__aehranPaymentBusy)return;
     const ids=['name','phone','email','address','city','pincode','state'];
     for(const id of ids){
@@ -2391,6 +2419,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMobileMenu()});
     if(button){button.disabled=true;button.textContent=selected==='COD'?'Placing order…':'Connecting to Razorpay…';button.style.opacity='.72'}
 
     try{
+      /* Preserve the NEW WEBSITE's existing COD flow exactly. */
       if(selected==='COD'){
         if(typeof window.__aehranCreateCodOrder==='function'){
           try{
@@ -2405,83 +2434,60 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMobileMenu()});
         return;
       }
 
-      if(!window.__aehranSecureReady||typeof window.__aehranCreateRazorpayOrder!=='function'){
-        toast('Razorpay secure payment service is not configured yet. COD is available.');
-        return;
-      }
-
-      /* Every retry gets a brand-new server order. */
-      const result=await withTimeout(window.__aehranCreateRazorpayOrder(payload),20000);
-      if(!result?.orderId||!Number(result.amount)||!result?.keyId){
-        toast('Razorpay secure order could not be created. No payment was charged.');
+      /*
+       * Razorpay-only section restored from the OLD WORKING WEBSITE:
+       * use the storefront's configured public Key ID, calculate the
+       * current cart total locally, open Razorpay Checkout, and create
+       * the local order only after Razorpay reports a successful payment.
+       * No Razorpay Secret Key is used or exposed here.
+       */
+      const gateway=(typeof cms!=='undefined'&&cms?.checkout?.gateway)||{};
+      const keyId=String(gateway.keyId||'').trim();
+      if(gateway.enabled===false||!keyId){
+        toast('Razorpay payment is not configured. Please choose another payment method.');
         return;
       }
       if(typeof window.Razorpay==='undefined'){
-        toast('Razorpay Checkout could not load. Please retry.');
+        toast('Payment gateway could not load. Please retry.');
         return;
       }
 
-      const amount=Number(result.amount);
-      const keyId=String(result.keyId);
-      if(!/^rzp_(test|live)_/i.test(keyId)){
-        toast('Razorpay key configuration is invalid. No payment was charged.');
-        console.error('AEHRAN invalid Razorpay keyId returned by server',keyId);
-        return;
-      }
-
-      const options={
+      const t=totals();
+      const rz=new window.Razorpay({
         key:keyId,
-        amount,
-        currency:result.currency||'INR',
+        amount:Math.round(t.total*100),
+        currency:'INR',
         name:(typeof cms!=='undefined'&&cms?.branding?.brandName)||'AEHRAN',
         description:'AEHRAN order payment',
-        order_id:String(result.orderId),
         prefill:{
-          name:payload.customer?.name||'',
-          email:payload.customer?.email||'',
+          name:document.getElementById('name').value,
+          email:document.getElementById('email').value,
           contact:phone
         },
-        notes:{
-          source:'AEHRAN Storefront',
-          gstRate:String(result.calculation?.gstRate??''),
-          gstAmount:String(result.calculation?.gstAmount??'')
-        },
+        notes:{source:'AEHRAN Storefront'},
         theme:{color:'#0c1825'},
         handler:async function(resp){
           try{
-            if(!resp?.razorpay_payment_id||!resp?.razorpay_order_id||!resp?.razorpay_signature){
-              throw Object.assign(new Error('Incomplete Razorpay payment response'),{code:'invalid-argument'});
+            if(!resp?.razorpay_payment_id){
+              toast('Payment response was incomplete. Your order was not created.');
+              return;
             }
-            if(typeof window.__aehranVerifyRazorpayPayment!=='function'){
-              throw Object.assign(new Error('Razorpay verification service unavailable'),{code:'unavailable'});
-            }
-            const verified=await withTimeout(
-              window.__aehranVerifyRazorpayPayment({
-                ...payload,
-                razorpayOrderId:resp.razorpay_order_id||result.orderId,
-                razorpayPaymentId:resp.razorpay_payment_id,
-                razorpaySignature:resp.razorpay_signature
-              }),20000
-            );
-            await aeHandleSecureOrderResult(verified);
+            await aeFinalizeLegacyRazorpayOrder(resp.razorpay_payment_id);
           }catch(e){
-            console.error('AEHRAN Razorpay verification failed',e);
-            toast(aePaymentErrorFinal(e,'Payment verification failed. No order was confirmed.'));
+            console.error('AEHRAN Razorpay order finalization failed',e);
+            toast(e?.message||'Payment was received, but the order could not be confirmed. Please contact AEHRAN support.');
           }
         }
-      };
-
-      const rz=new window.Razorpay(options);
+      });
       rz.on('payment.failed',function(resp){
         const er=resp?.error||{};
         console.error('AEHRAN Razorpay payment.failed',resp);
-        const detail=er.description||er.reason||er.code||'The payment attempt was not completed.';
-        toast('Payment failed — '+detail+' You can tap Continue to retry safely.');
+        toast(er.description||'Payment was not completed. You can retry checkout safely.');
       });
       rz.open();
     }catch(e){
       console.error('AEHRAN Razorpay checkout failed',e);
-      toast(aePaymentErrorFinal(e,'Razorpay checkout could not be started. No payment was charged.'));
+      toast(e?.message||'Razorpay checkout could not be started. No payment was charged.');
     }finally{
       window.__aehranPaymentBusy=false;
       if(button){button.disabled=false;button.textContent=oldText||'Continue';button.style.opacity=''}
