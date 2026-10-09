@@ -721,8 +721,6 @@ function pc(p){const wished=wishlist.includes(p.id),off=Math.max(0,Math.round((1
 function home(){const h=cms.home||DEFAULT_CMS_STOREFRONT.home;const source=Array.isArray(h.categories)&&h.categories.length?h.categories:(h.circles||DEFAULT_CMS_STOREFRONT.home.circles);const circles=source.filter(c=>c&&c.visible!==false).map((c,i)=>{const target=String(c.target||c.slug||'all');const collectionTarget=target.startsWith('#collection/')?target.slice(11):target;const fp=findByCollection(collectionTarget,i);return {...c,label:c.title||c.label||('Category '+(i+1)),target,href:target,image:cmsImg(c.image,fp.img)}});const ed=h.editorials||[],oc=h.occasions||[],films=h.films||[],services=h.service?.items||[],homeReviews=h.reviews?.items||[];const heroStyle=cms.hero?.image?` style="background-image:url('${escapeAttr(cms.hero.image)}')"`:'';return `<section class="hero-user"${heroStyle}><a class="hero-link" href="#collection/${escapeAttr(cms.hero?.link||'new')}" aria-label="Shop AEHRAN collection"></a><div class="hero-controls"><i></i><i></i><i></i></div><div class="hero-corner">AEHRAN · Royal Edit</div></section>
 <section class="circle-strip"><div class="wrap"><div class="circle-scroll-wrap"><div class="circle-row" id="homeCircleRow">${circles.map(c=>`<a class="circle-cat" href="${escapeAttr(c.href||((String(c.target||'all').startsWith('#')?c.target:'#collection/'+c.target)))}"><div class="circle-img"><img src="${escapeAttr(c.image)}" alt="${escapeAttr(c.label)}"></div><b>${escapeHTML(c.label)}</b><span>Explore</span></a>`).join('')}</div><button class="circle-scroll-arrow" id="circleScrollNext" type="button" aria-label="Scroll categories right" onclick="scrollCircleStrip(1)">›</button></div></div></section>
 <section class="section"><div class="wrap"><div class="section-head"><div><div class="eyebrow">${escapeHTML(h.trending?.eyebrow||'')}</div><h2>${escapeHTML(h.trending?.title||'Trending Ethnic Styles')}</h2></div><p>${escapeHTML(h.trending?.description||'')}</p></div><div class="tabs"><button class="tab-btn active" onclick="switchHomeTab(this,'all')">All</button><button class="tab-btn" onclick="switchHomeTab(this,'kurta')">Kurta Sets</button><button class="tab-btn" onclick="switchHomeTab(this,'jacket')">Jackets</button><button class="tab-btn" onclick="switchHomeTab(this,'sherwani')">Sherwanis</button><button class="tab-btn" onclick="switchHomeTab(this,'kids')">Kids</button></div><div id="homeProducts" class="products">${products.slice(0,8).map(pc).join('')}</div><div style="text-align:center;margin-top:35px"><a href="#collection/all" class="btn ghost">View all styles</a></div></div></section>
-<section class="editorial-grid">${ed.map((x,i)=>{const fp=findByCollection(x.target,i),cl=i===0?'editorial-big':'editorial-tile';return `<a class="${cl}" href="#collection/${escapeAttr(x.target)}"><img src="${escapeAttr(cmsImg(x.image,fp.img))}" alt="${escapeAttr(x.title)}"><div class="editorial-copy"><p>${escapeHTML(x.eyebrow||'')}</p><h3>${escapeHTML(x.title||'')}</h3></div></a>`}).reduce((a,x,i)=>i===0?x:a+(i===1?'<div class="editorial-small">':'')+x+(i===ed.length-1?'</div>':''),'')}</section>
-<section class="section"><div class="wrap"><div class="section-head"><div><div class="eyebrow">Occasion wardrobe</div><h2>Shop by Occasion</h2></div><p>Explore edits built around the events that make an Indian celebration feel complete.</p></div><div class="occasion-grid">${oc.map((x,i)=>{const fp=findByCollection(x.target,i);return `<a class="occasion" href="#collection/${escapeAttr(x.target)}"><img src="${escapeAttr(cmsImg(x.image,fp.img))}"><div class="occasion-copy"><h3>${escapeHTML(x.title)}</h3><span>${escapeHTML(x.subtitle)}</span></div></a>`}).join('')}</div></div></section>
 <section class="film-section"><div class="wrap"><div class="film-head"><div><div class="eyebrow" style="color:#9f978f">AEHRAN films</div><h2>AEHRAN in Motion.</h2></div><p>A closer look at silhouettes, layering and festive details — designed to feel effortless on every screen.</p></div><div class="film-grid">${films.map((x,i)=>{const p=products.find(p=>p.id===x.productId)||products[i]||{},im=cmsImg(x.image,p.img);return `<button class="film ${i?'small':''}" onclick="openFilm('${escapeAttr(x.title)}','${escapeAttr(p.id||x.productId)}')"><img src="${escapeAttr(im)}"><span class="play">▶</span><div class="film-copy"><small>${escapeHTML(x.kicker||'')}</small><h3>${escapeHTML(x.title||'')}</h3><p>${escapeHTML(x.text||'')}</p></div></button>`}).join('')}</div></div></section>
 <section class="section"><div class="wrap"><div class="section-head"><div><div class="eyebrow">${escapeHTML(h.service?.eyebrow||'AEHRAN service')}</div><h2>${escapeHTML(h.service?.title||'Designed around the occasion.')}</h2></div></div><div class="benefits">${services.map((x,i)=>`<div class="benefit">${ico(['people','video','cloth','truck','return','secure'][i]||'secure')}<b>${escapeHTML(x.title)}</b><span>${escapeHTML(x.text)}</span></div>`).join('')}</div></div></section>
 <section class="section reviews-home"><div class="wrap"><div class="section-head"><div><div class="eyebrow">${escapeHTML(h.reviews?.eyebrow||'The AEHRAN circle')}</div><h2>${escapeHTML(h.reviews?.title||'Worn for real celebrations.')}</h2></div></div><div class="review-grid">${homeReviews.map(r=>`<div class="review-card"><div class="stars">${'★'.repeat(Math.max(1,Math.min(5,Number(r.stars)||5)))}</div><p>“${escapeHTML(r.text)}”</p><small>${escapeHTML(r.by)}</small></div>`).join('')}</div></div></section>${footer()}`}
@@ -2533,6 +2531,68 @@ async function finalPlaceOrder(){
   };
 })();
 </script>
+
+<script id="aehran-father-son-size-fix">
+(function(){
+  const ADULT=['XS','S','M','L','XL','XXL'];
+  const KIDS=['3-4 years','5-6 years','7-8 years','9-10 years','11-12 years','13-14 years'];
+  function isFatherSon(p){
+    const cols=Array.isArray(p&&p.collections)?p.collections:[];
+    const cat=String(p&&(p.cat||p.category)||'').toLowerCase();
+    return !!(p&&(p.isCombo===true || p.isCombo==='true' ||
+      cols.some(x=>String(x).toLowerCase()==='father-son') ||
+      cat==='father-son' || cat==='father & son' || cat==='father and son'));
+  }
+  function repair(){
+    if(!Array.isArray(window.products))return;
+    let changed=false;
+    window.products.forEach(p=>{
+      if(!p||!isFatherSon(p))return;
+      if(p.isCombo!==true){p.isCombo=true;changed=true}
+      if(!Array.isArray(p.fatherSizes)||!p.fatherSizes.length){p.fatherSizes=ADULT.slice();changed=true}
+      if(!Array.isArray(p.sonSizes)||!p.sonSizes.length){p.sonSizes=KIDS.slice();changed=true}
+    });
+    if(changed){try{localStorage.setItem('aehran_products',JSON.stringify(window.products))}catch(e){}}
+  }
+  repair();
+  window.chooseFatherSize=function(el,size){
+    const value=String(size==null?((el&&el.dataset.size)||(el&&el.textContent)||''):size).trim();
+    if(!el||!value)return;
+    const scope=el.closest('.pinfo')||document;
+    scope.querySelectorAll('.combo-father').forEach(b=>{
+      const active=b===el;b.classList.toggle('active',active);b.setAttribute('aria-pressed',active?'true':'false');
+    });
+    try{selectedFatherSize=value}catch(e){}
+    window.__aehranFatherSize=value;
+    el.dataset.selectedSize=value;
+  };
+  window.chooseSonSize=function(el,size){
+    const value=String(size==null?((el&&el.dataset.size)||(el&&el.textContent)||''):size).trim();
+    if(!el||!value)return;
+    const scope=el.closest('.pinfo')||document;
+    scope.querySelectorAll('.combo-son').forEach(b=>{
+      const active=b===el;b.classList.toggle('active',active);b.setAttribute('aria-pressed',active?'true':'false');
+    });
+    try{selectedSonSize=value}catch(e){}
+    window.__aehranSonSize=value;
+    el.dataset.selectedSize=value;
+  };
+  const oldRoute=window.route;
+  if(typeof oldRoute==='function'&&!oldRoute.__aeFatherSonRepair){
+    const wrappedRoute=function(){repair();return oldRoute.apply(this,arguments)};
+    wrappedRoute.__aeFatherSonRepair=true;window.route=wrappedRoute;
+    try{route=wrappedRoute}catch(e){}
+  }
+  document.addEventListener('click',function(e){
+    const btn=e.target&&e.target.closest&&e.target.closest('.pinfo .combo-father,.pinfo .combo-son');
+    if(!btn)return;
+    const size=String(btn.textContent||'').trim();
+    if(btn.classList.contains('combo-father'))window.chooseFatherSize(btn,size);
+    else window.chooseSonSize(btn,size);
+  },true);
+})();
+</script>
+
 </body></html>
 
 <!-- AEHRAN legacy embedded banner payload preserved to keep the original storefront payload/size stable. -->
