@@ -2591,15 +2591,11 @@ async function finalPlaceOrder(){
 .ae-size-chart-modal-item table{width:100%;border-collapse:collapse;display:block;overflow-x:auto;max-width:100%}
 @media(max-width:700px){.ae-size-chart-modal-list{max-height:72vh;gap:12px}.ae-size-chart-modal-item{padding:8px}.ae-size-chart-modal-item img{max-height:58vh}}
 </style>
-<script id="aehran-multi-size-chart-storefront-v1">
+<script id="aehran-multi-size-chart-storefront-v2-collection-mapping">
 (function(){
  const escv=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- window.aeOpenSizeChart=function(){
-   const all=Array.isArray(cms?.sizeCharts)?cms.sizeCharts.filter(x=>x&&typeof x==='object'&&typeof x.image==='string'&&x.image.trim()).slice(0,3):[];
-   if(!all.length){const old=cms?.sizeChartImage||AEHRAN_DEFAULT_SIZE_GUIDE_IMAGE;if(old)all.push({title:'Size Guide',image:old})}
-   const body=all.length?`<div class="ae-size-chart-modal-list">${all.map((c,i)=>`<section class="ae-size-chart-modal-item"><h4>${escv(c.title||('Size Chart '+(i+1)))}</h4><img src="${escv(c.image)}" alt="${escv(c.title||'AEHRAN Size Chart')}" loading="${i?'lazy':'eager'}" decoding="async" onerror="this.closest('section').style.display='none'"></section>`).join('')}</div>`:'<p>Size chart is currently unavailable. Please try again later.</p>';
-   openModal(`<button class="icon-btn close" onclick="closeModal()" aria-label="Close">✕</button><div class="eyebrow">AEHRAN</div><h3>Size Chart</h3>${body}<button class="btn ghost" onclick="closeModal()">Close</button>`);
- };
+ function currentProduct(){try{const h=String(location.hash||'');const m=h.match(/(?:product=|product\/)([^&/]+)/);if(m)return (Array.isArray(products)?products:[]).find(p=>String(p.id)===decodeURIComponent(m[1]))||null}catch(e){}return null}
+ window.aeOpenSizeChart=function(){const product=currentProduct();const productCollections=new Set([...(Array.isArray(product?.collections)?product.collections:[]),product?.cat,product?.category].filter(Boolean).map(String));let all=Array.isArray(cms?.sizeCharts)?cms.sizeCharts.filter(c=>c&&typeof c==='object'&&typeof c.image==='string'&&c.image.trim()):[];let matched=all.filter(c=>{const keys=Array.isArray(c.collections)?c.collections.map(String):(Array.isArray(c.collectionKeys)?c.collectionKeys.map(String):[]);return keys.length&&keys.some(k=>productCollections.has(k))});if(!matched.length){const general=all.filter(c=>!(Array.isArray(c.collections)&&c.collections.length)&&!(Array.isArray(c.collectionKeys)&&c.collectionKeys.length));matched=general.length?general:(!all.length&&cms?.sizeChartImage?[{title:'General Size Guide',image:cms.sizeChartImage,collections:[]}]:[])}const body=matched.length?`<div class="ae-size-chart-modal-list">${matched.map((c,i)=>`<section class="ae-size-chart-modal-item"><h4>${escv(c.title||('Size Chart '+(i+1)))}</h4><img src="${escv(c.image)}" alt="${escv(c.title||'AEHRAN Size Chart')}" loading="${i?'lazy':'eager'}" decoding="async" onerror="this.closest('section').style.display='none'"></section>`).join('')}</div>`:'<p>No size chart has been assigned to this product collection yet. Please contact AEHRAN for sizing help.</p>';openModal(`<button class="icon-btn close" onclick="closeModal()" aria-label="Close">✕</button><div class="eyebrow">AEHRAN</div><h3>Size Chart${product?' · '+escv(product.name||'Product'):''}</h3>${body}<button class="btn ghost" onclick="closeModal()">Close</button>`)};
 })();
 </script>
 
