@@ -1150,7 +1150,7 @@ try{
   window.AEHRAN_ADMIN_BANNER_BRIDGE?.applyRemote(bannerManager);
   onValue(ref(db,`${ROOT}/bannersV2`),x=>{const next=arr(x.val()).filter(b=>!isLegacyHardcodedBanner(b));window.AEHRAN_ADMIN_BANNER_BRIDGE?.applyRemote(next)},e=>console.error('Banner manager realtime listener',e));
   onValue(ref(db,`${ROOT}/collections`),x=>{if(__aehranCollectionsWritePending)return;const next=arr(x.val());COLLECTIONS=next;save('aehran_collections',COLLECTIONS);if(typeof current!=='undefined'&&current==='collections')show('collections')},e=>console.error('Collections realtime listener',e));
-  await update(ref(db,`${ROOT}/cms/hero`),null).catch(()=>{});
+  try{await set(ref(db,`${ROOT}/cms/hero`),null)}catch(e){console.warn('hero cleanup skipped',e)}
   const b=window.AEHRAN_ADMIN_BRIDGE,s=await get(ref(db,ROOT));
   if(!s.exists()){await saveAll(b.snapshot(),true)}
   else{const d=unpack(s.val());mark(pack(d));b.applyRemote(d)}
