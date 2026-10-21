@@ -1134,6 +1134,14 @@ window.__aehranFirebaseAdminReload=async()=>{
 };
 
 try{
+  /* Fast dedicated orders listener: new orders appear instantly and duplicate records are cleaned up */
+  onValue(ref(db,`${ROOT}/orders`),x=>{
+    if(!x.exists())return;
+    const raw=arr(x.val()),list=window.aeDedupeOrders(raw).sort((p,q)=>String(p.date||'').localeCompare(String(q.date||''))),m=pack({orders:list}).orders;
+    last.orders=fingerprint(m);lastOrders=m;
+    window.AEHRAN_ADMIN_BRIDGE?.applyRemote({orders:list});
+    if(raw.length!==list.length&&sessionStorage.getItem('aehran_admin_panel')==='1'){set(ref(db,`${ROOT}/orders`),m).catch(e=>console.warn('Duplicate order cleanup failed',e))}
+  },e=>console.error('Orders realtime listener',e));
   const bannerSnap=await get(ref(db,`${ROOT}/bannersV2`));
   const remoteBanners=arr(bannerSnap.val()).filter(b=>!isLegacyHardcodedBanner(b));
   if(remoteBanners.length!==arr(bannerSnap.val()).length) await set(ref(db,`${ROOT}/bannersV2`),remoteBanners);
@@ -1149,20 +1157,12 @@ try{
   onValue(ref(db,ROOT),x=>{
     if(!x.exists())return;
     const d=unpack(x.val());mark(pack(d));b.applyRemote(d)
-  },e=>{console.error('Admin realtime listener',e);status('Firebase blocked')});
-  /* Fast dedicated orders listener: new orders appear instantly and duplicate records are cleaned up */
-  onValue(ref(db,`${ROOT}/orders`),x=>{
-    if(!x.exists())return;
-    const raw=arr(x.val()),list=window.aeDedupeOrders(raw).sort((p,q)=>String(p.date||'').localeCompare(String(q.date||''))),m=pack({orders:list}).orders;
-    last.orders=fingerprint(m);lastOrders=m;
-    window.AEHRAN_ADMIN_BRIDGE?.applyRemote({orders:list});
-    if(raw.length!==list.length&&sessionStorage.getItem('aehran_admin_panel')==='1'){set(ref(db,`${ROOT}/orders`),m).catch(e=>console.warn('Duplicate order cleanup failed',e))}
-  },e=>console.error('Orders realtime listener',e));
+  },e=>{console.error('Admin realtime listener',e);status('Firebase blocked ('+(e&&e.code||e&&e.message||'error')+')')});
   await window.__aehranAdminAccountsReadyPromise;
   onValue(ref(db,ADMIN_USERS_ROOT),x=>{if(!x.exists())return;const users=unpackAdminUsers(x.val());if(users.length)window.AEHRAN_ADMIN_BRIDGE?.applyAdminUsers(users)},e=>console.error('Admin accounts realtime listener',e));
   status('Firebase Live');
   console.log('AEHRAN admin: Realtime Database connected; Firebase Storage disabled; admin direct image upload enabled');
-}catch(e){console.error(e);status('Firebase blocked')}
+}catch(e){console.error(e);status('Firebase blocked ('+(e&&e.code||e&&e.message||'error')+')')}
 </script>
 <script id="aehran-latest-site-controls">
 (function(){
