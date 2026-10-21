@@ -172,7 +172,7 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 const load=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v??clone(d)}catch(e){return clone(d)}};
 const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
 let products=load('aehran_products',SEED_PRODUCTS);
-let orders=load('aehran_orders',[]);
+window.aeDedupeOrders=function(list){const m=new Map();(Array.isArray(list)?list:[]).forEach((o,i)=>{if(!o||typeof o!=='object')return;const k=o.id?String(o.id):'__'+i;const p=m.get(k);m.set(k,p?Object.assign({},p,o):o)});return Array.from(m.values())};let orders=window.aeDedupeOrders(load('aehran_orders',[]));
 let reviewsDB=load('aehran_reviews',{});
 let cms=load('aehran_cms',DEFAULT_CMS);
 cms.sizeChartImage=cms.sizeChartImage||AEHRAN_DEFAULT_SIZE_GUIDE_IMAGE;
@@ -873,7 +873,7 @@ function openStorefront(){let url=localStorage.getItem('aehran_storefront_url');
 function openModal(html){document.getElementById('modal').innerHTML=html;document.getElementById('modalWrap').classList.add('open')}
 function closeModal(){document.getElementById('modalWrap').classList.remove('open')}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window.__t);window.__t=setTimeout(()=>t.classList.remove('show'),2200)}
-window.addEventListener('storage',e=>{if(['aehran_orders','aehran_products','aehran_reviews','aehran_returns','aehran_payment_settlements','aehran_cms','aehran_media','aehran_delivery_partners','aehran_admin_users'].includes(e.key)&&sessionStorage.getItem('aehran_admin_panel')==='1'){products=load('aehran_products',SEED_PRODUCTS);orders=load('aehran_orders',[]);ensureOrderLabels();reviewsDB=load('aehran_reviews',{});returnsDB=load('aehran_returns',[]);paymentSettlements=load('aehran_payment_settlements',{});cms=load('aehran_cms',DEFAULT_CMS);media=load('aehran_media',[]);deliveryPartners=load('aehran_delivery_partners',DEFAULT_DELIVERY_PARTNERS);adminUsers=load('aehran_admin_users',DEFAULT_ADMIN_USERS);if(e.key==='aehran_orders')scheduleAutoDeliveries();if(['dashboard','orders','returns','payments','products','categoryControl','banners','homepage','navigation','display','deliveryPartners','users','gst','gstReport'].includes(current))show(current)}});
+window.addEventListener('storage',e=>{if(['aehran_orders','aehran_products','aehran_reviews','aehran_returns','aehran_payment_settlements','aehran_cms','aehran_media','aehran_delivery_partners','aehran_admin_users'].includes(e.key)&&sessionStorage.getItem('aehran_admin_panel')==='1'){products=load('aehran_products',SEED_PRODUCTS);orders=window.aeDedupeOrders(load('aehran_orders',[]));ensureOrderLabels();reviewsDB=load('aehran_reviews',{});returnsDB=load('aehran_returns',[]);paymentSettlements=load('aehran_payment_settlements',{});cms=load('aehran_cms',DEFAULT_CMS);media=load('aehran_media',[]);deliveryPartners=load('aehran_delivery_partners',DEFAULT_DELIVERY_PARTNERS);adminUsers=load('aehran_admin_users',DEFAULT_ADMIN_USERS);if(e.key==='aehran_orders')scheduleAutoDeliveries();if(['dashboard','orders','returns','payments','products','categoryControl','banners','homepage','navigation','display','deliveryPartners','users','gst','gstReport'].includes(current))show(current)}});
 renderApp();
 
 
@@ -1011,7 +1011,7 @@ new MutationObserver(ms=>{for(const m of ms)for(const n of m.addedNodes||[]){if(
  }
 
  window.AEHRAN_ADMIN_BANNER_BRIDGE={applyRemote(list){if(__aehranBannerWritePending)return;if(Array.isArray(list)){bannerManager=list.filter(Boolean);normalizeBannerManager();saveBannerManagerLocal();if(sessionStorage.getItem('aehran_admin_panel')==='1'&&current==='banners'){try{show('banners')}catch(e){}}}}};
-window.AEHRAN_ADMIN_BRIDGE={applyCustomerAccounts(list){customerAccounts=Array.isArray(list)?list:[];if(sessionStorage.getItem('aehran_admin_panel')==='1'&&current==='logins'){try{show('logins')}catch(e){}}},snapshot(){const safeCms=clone(cms);delete safeCms.hero;return {products,orders,reviews:reviewsDB,cms:safeCms,media,returns:returnsDB,paymentSettlements,customerUsers,collections:Array.isArray(COLLECTIONS)?COLLECTIONS:[],banners:Array.isArray(bannerManager)?bannerManager:[] }},adminUsersSnapshot(){return adminUsers.map(u=>({id:u.id,name:u.name,email:u.email,role:u.role,active:u.active!==false,salt:u.salt,passwordHash:u.passwordHash,createdAt:u.createdAt||'',lastLoginAt:u.lastLoginAt||''}))},applyAdminUsers(list=[]){if(!Array.isArray(list)||!list.length)return;adminUsers=list;save('aehran_admin_users',adminUsers);window.__aehranAdminAccountsReady=true;const logged=sessionStorage.getItem('aehran_admin_user_id');if(logged&&!adminUsers.some(u=>u.id===logged&&u.active)){sessionStorage.removeItem('aehran_admin_panel');sessionStorage.removeItem('aehran_admin_user_id')}if(document.getElementById('root')){try{renderApp()}catch(e){}}},applyRemote(d={}){window.__aehranApplyingRemote=true;try{if(Array.isArray(d.products)){products=__aehranMergeProducts(d.products);save('aehran_products',products)}if(Array.isArray(d.orders)){orders=d.orders;ensureOrderLabels();save('aehran_orders',orders);setTimeout(scheduleAutoDeliveries,500)}if(d.reviews&&typeof d.reviews==='object'){reviewsDB=d.reviews;save('aehran_reviews',reviewsDB)}if(d.cms&&typeof d.cms==='object'){cms=__aehranMergeCMS(cms,__aehranNormalizeRemoteCMS(d.cms));delete cms.hero;if(aeFixReturnPolicy()&&!window.__aeRetPolicyPushed&&sessionStorage.getItem('aehran_admin_panel')==='1'){window.__aeRetPolicyPushed=true;setTimeout(()=>{try{commit('Return policy updated to 3 days')}catch(e){}},1200)}save('aehran_cms',cms)}if(Array.isArray(d.media)){if(window.__aehranMediaUploadActive){const byUrl=new Map(d.media.map(x=>[x?.url,x]));(media||[]).forEach(x=>{if(x?.url&&!byUrl.has(x.url))byUrl.set(x.url,x)});media=[...byUrl.values()]}else media=d.media;save('aehran_media',media)}if(Array.isArray(d.returns)){returnsDB=d.returns;save('aehran_returns',returnsDB)}if(d.paymentSettlements&&typeof d.paymentSettlements==='object'){paymentSettlements=d.paymentSettlements;save('aehran_payment_settlements',paymentSettlements)}if(Array.isArray(d.customerUsers)){customerUsers=d.customerUsers;save('aehran_customer_users',customerUsers)}if(Array.isArray(d.collections)){COLLECTIONS=d.collections.filter(Boolean);save('aehran_collections',COLLECTIONS)}/* Banner Manager v2 is authoritative at /bannersV2. Never overwrite its desktop+mobile records from the legacy root snapshot (d.banners), which may contain only desktop banners. */const e=document.getElementById('syncText');if(e)e.textContent='Firebase Live';if(sessionStorage.getItem('aehran_admin_panel')==='1'&&document.getElementById('content')){try{show(current)}catch(e){}}}finally{window.__aehranApplyingRemote=false}}};
+window.AEHRAN_ADMIN_BRIDGE={applyCustomerAccounts(list){customerAccounts=Array.isArray(list)?list:[];if(sessionStorage.getItem('aehran_admin_panel')==='1'&&current==='logins'){try{show('logins')}catch(e){}}},snapshot(){const safeCms=clone(cms);delete safeCms.hero;return {products,orders,reviews:reviewsDB,cms:safeCms,media,returns:returnsDB,paymentSettlements,customerUsers,collections:Array.isArray(COLLECTIONS)?COLLECTIONS:[],banners:Array.isArray(bannerManager)?bannerManager:[] }},adminUsersSnapshot(){return adminUsers.map(u=>({id:u.id,name:u.name,email:u.email,role:u.role,active:u.active!==false,salt:u.salt,passwordHash:u.passwordHash,createdAt:u.createdAt||'',lastLoginAt:u.lastLoginAt||''}))},applyAdminUsers(list=[]){if(!Array.isArray(list)||!list.length)return;adminUsers=list;save('aehran_admin_users',adminUsers);window.__aehranAdminAccountsReady=true;const logged=sessionStorage.getItem('aehran_admin_user_id');if(logged&&!adminUsers.some(u=>u.id===logged&&u.active)){sessionStorage.removeItem('aehran_admin_panel');sessionStorage.removeItem('aehran_admin_user_id')}if(document.getElementById('root')){try{renderApp()}catch(e){}}},applyRemote(d={}){window.__aehranApplyingRemote=true;try{if(Array.isArray(d.products)){products=__aehranMergeProducts(d.products);save('aehran_products',products)}if(Array.isArray(d.orders)){orders=window.aeDedupeOrders(d.orders);ensureOrderLabels();save('aehran_orders',orders);setTimeout(scheduleAutoDeliveries,500)}if(d.reviews&&typeof d.reviews==='object'){reviewsDB=d.reviews;save('aehran_reviews',reviewsDB)}if(d.cms&&typeof d.cms==='object'){cms=__aehranMergeCMS(cms,__aehranNormalizeRemoteCMS(d.cms));delete cms.hero;if(aeFixReturnPolicy()&&!window.__aeRetPolicyPushed&&sessionStorage.getItem('aehran_admin_panel')==='1'){window.__aeRetPolicyPushed=true;setTimeout(()=>{try{commit('Return policy updated to 3 days')}catch(e){}},1200)}save('aehran_cms',cms)}if(Array.isArray(d.media)){if(window.__aehranMediaUploadActive){const byUrl=new Map(d.media.map(x=>[x?.url,x]));(media||[]).forEach(x=>{if(x?.url&&!byUrl.has(x.url))byUrl.set(x.url,x)});media=[...byUrl.values()]}else media=d.media;save('aehran_media',media)}if(Array.isArray(d.returns)){returnsDB=d.returns;save('aehran_returns',returnsDB)}if(d.paymentSettlements&&typeof d.paymentSettlements==='object'){paymentSettlements=d.paymentSettlements;save('aehran_payment_settlements',paymentSettlements)}if(Array.isArray(d.customerUsers)){customerUsers=d.customerUsers;save('aehran_customer_users',customerUsers)}if(Array.isArray(d.collections)){COLLECTIONS=d.collections.filter(Boolean);save('aehran_collections',COLLECTIONS)}/* Banner Manager v2 is authoritative at /bannersV2. Never overwrite its desktop+mobile records from the legacy root snapshot (d.banners), which may contain only desktop banners. */const e=document.getElementById('syncText');if(e)e.textContent='Firebase Live';if(sessionStorage.getItem('aehran_admin_panel')==='1'&&document.getElementById('content')){try{show(current)}catch(e){}}}finally{window.__aehranApplyingRemote=false}}};
  if(typeof commit==='function'&&!commit.__fbWrapped){const old=commit;commit=function(msg='Changes saved'){old(msg);if(!window.__aehranApplyingRemote){const e=document.getElementById('syncText');if(e)e.textContent='Syncing Firebase…';window.__aehranFirebaseAdminSave?.(window.AEHRAN_ADMIN_BRIDGE.snapshot())}};commit.__fbWrapped=true}
  const ctl=['Products & stock','Product photos & multi-angle galleries','Kids / Men / Jackets / Wedding categories','Desktop & Mobile Banner Manager','Homepage / Trending / editorial text','Navigation','Logo / branding / theme','Checkout & payment labels','Product page offers & rewards','Orders & shipping labels','Returns / refunds','Reviews','Policies','SEO & footer','Media library'];
  backendPage=function(){return `${head('Firebase Realtime Sync','Admin changes are synced to the AEHRAN customer website in real time.')}<div class="grid2"><div class="section-card"><h2>Firebase connection</h2><div class="list-row"><div><b>Realtime Database</b><small>aehran123 · /aehran_store_v3</small></div><span class="status Delivered" id="firebaseAdminBadge">Connecting…</span></div><div class="list-row"><div><b>Image mode</b><small>Admin direct upload — optimized images are saved to the Firebase image branch and linked to products automatically.</small></div><span class="status Delivered">Admin Upload</span></div><p class="mini-note">Realtime Database keeps catalog/content/orders/settings separate from uploaded image payloads. Images uploaded from Admin are saved in the Firebase Realtime Database image branch and their dbimg references are synced with products; the storefront resolves those references automatically. Admin staff accounts sync separately under aehran_admin_accounts using hashed passwords. Courier API configuration stays local to this admin build.</p><div class="head-actions"><button class="btn" onclick="window.__aehranFirebaseAdminSave?.(window.AEHRAN_ADMIN_BRIDGE.snapshot())">Push current admin data</button><button class="btn ghost" onclick="window.__aehranFirebaseAdminReload?.()">Reload from Firebase</button></div></div><div class="section-card"><h2>A–Z cloud control</h2><div class="collection-grid">${ctl.map(x=>`<div class="collection-card"><b>${x}</b><small>Realtime sync</small></div>`).join('')}</div></div></div>`}
@@ -1073,15 +1073,16 @@ function pack(s){
 }
 const unpack=v=>({
   products:arr(v?.products),
-  orders:arr(v?.orders).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))),
+  orders:window.aeDedupeOrders(arr(v?.orders)).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))),
   reviews:v?.reviews||{},cms:v?.cms||{},media:Array.isArray(v?.media)?v.media:arr(v?.media),
   returns:arr(v?.returns),paymentSettlements:v?.paymentSettlements||{},customerUsers:arr(v?.customerUsers),collections:arr(v?.collections),banners:arr(v?.banners)
 });
 
-let last={};
+let last={};let lastOrders={};
 const fingerprint=v=>JSON.stringify(v??null);
 function mark(data){
   for(const k of ['products','orders','reviews','cms','media','returns','paymentSettlements','customerUsers','collections','banners'])last[k]=fingerprint(data[k]);
+  lastOrders=(data.orders&&typeof data.orders==='object')?data.orders:{};
 }
 let queue=Promise.resolve();
 async function writeSnapshot(snapshot,force=false){
@@ -1091,7 +1092,17 @@ async function writeSnapshot(snapshot,force=false){
     if(force||fp!==last[key]){jobs.push(set(ref(db,`${ROOT}/${key}`),val));last[key]=fp}
   };
   write('products',c.products);
-  write('orders',c.orders);
+  {/* per-order writes: never overwrite the whole orders node with a possibly stale list */
+    const next=c.orders||{},fpO=fingerprint(next);
+    if(force){jobs.push(set(ref(db,`${ROOT}/orders`),next));lastOrders=next;last.orders=fpO}
+    else if(fpO!==last.orders){
+      const patch={};
+      for(const k of Object.keys(next)){if(fingerprint(next[k])!==fingerprint(lastOrders[k]))patch[k]=next[k]}
+      for(const k of Object.keys(lastOrders)){if(!(k in next))patch[k]=null}
+      if(Object.keys(patch).length)jobs.push(update(ref(db,`${ROOT}/orders`),patch));
+      lastOrders=next;last.orders=fpO;
+    }
+  }
   write('reviews',c.reviews);
   write('cms',c.cms);
   write('media',c.media);
@@ -1139,6 +1150,14 @@ try{
     if(!x.exists())return;
     const d=unpack(x.val());mark(pack(d));b.applyRemote(d)
   },e=>{console.error('Admin realtime listener',e);status('Firebase blocked')});
+  /* Fast dedicated orders listener: new orders appear instantly and duplicate records are cleaned up */
+  onValue(ref(db,`${ROOT}/orders`),x=>{
+    if(!x.exists())return;
+    const raw=arr(x.val()),list=window.aeDedupeOrders(raw).sort((p,q)=>String(p.date||'').localeCompare(String(q.date||''))),m=pack({orders:list}).orders;
+    last.orders=fingerprint(m);lastOrders=m;
+    window.AEHRAN_ADMIN_BRIDGE?.applyRemote({orders:list});
+    if(raw.length!==list.length&&sessionStorage.getItem('aehran_admin_panel')==='1'){set(ref(db,`${ROOT}/orders`),m).catch(e=>console.warn('Duplicate order cleanup failed',e))}
+  },e=>console.error('Orders realtime listener',e));
   await window.__aehranAdminAccountsReadyPromise;
   onValue(ref(db,ADMIN_USERS_ROOT),x=>{if(!x.exists())return;const users=unpackAdminUsers(x.val());if(users.length)window.AEHRAN_ADMIN_BRIDGE?.applyAdminUsers(users)},e=>console.error('Admin accounts realtime listener',e));
   status('Firebase Live');
