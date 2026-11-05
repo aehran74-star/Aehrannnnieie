@@ -1,0 +1,54 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "aehran_store_v3": {
+      ".read":  "auth != null && (auth.token.email === 'admin@aehran.com' || root.child('aehran_staff').child(auth.uid).val() === true)",
+      ".write": "auth != null && (auth.token.email === 'admin@aehran.com' || root.child('aehran_staff').child(auth.uid).val() === true)",
+
+      "products":    { ".read": true },
+      "cms":         { ".read": true },
+      "collections": { ".read": true },
+      "bannersV2":   { ".read": true },
+      "meta":        { ".read": true },
+
+      "reviews": {
+        ".read": true,
+        "$productId": { ".write": "auth != null" }
+      },
+
+      "orders": {
+        ".indexOn": ["email"],
+        ".read": "auth != null && query.orderByChild === 'email' && query.equalTo === auth.token.email"
+      },
+
+      "returns": {
+        ".indexOn": ["uid"],
+        ".read": "auth != null && query.orderByChild === 'uid' && query.equalTo === auth.uid",
+        "$returnId": {
+          ".write": "auth != null && newData.child('uid').val() === auth.uid && (!data.exists() || data.child('uid').val() === auth.uid)"
+        }
+      },
+
+      "customerAccounts": {
+        "$uid": { ".read": "auth != null && auth.uid === $uid", ".write": "auth != null && auth.uid === $uid" }
+      }
+    },
+
+    "aehran_image_store_v1": {
+      ".read": true,
+      ".write": "auth != null && (auth.token.email === 'admin@aehran.com' || root.child('aehran_staff').child(auth.uid).val() === true)"
+    },
+
+    "aehran_admin_accounts": {
+      ".read":  "auth != null && (auth.token.email === 'admin@aehran.com' || root.child('aehran_staff').child(auth.uid).val() === true)",
+      ".write": "auth != null && (auth.token.email === 'admin@aehran.com' || root.child('aehran_staff').child(auth.uid).val() === true)"
+    },
+
+    "aehran_staff": {
+      ".read": "auth != null && root.child('aehran_staff').child(auth.uid).val() === true",
+      ".write": false
+    }
+  }
+}
